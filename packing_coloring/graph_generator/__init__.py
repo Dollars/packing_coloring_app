@@ -1,0 +1,1 @@
+from graph_generator.generator import load_graph_file
