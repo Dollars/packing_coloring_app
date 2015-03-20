@@ -29,10 +29,10 @@ def parse_col(filename):
                     start_zero = True
         else:
             assert False
-        
+
     if start_zero:
         g.remove_vertex(v_nbr)
     else:
         g.remove_vertex(0)
-            
+
     return g

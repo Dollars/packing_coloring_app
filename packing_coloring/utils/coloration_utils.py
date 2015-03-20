@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from utils.graph_utils import *
+from packing_coloring.utils.graph_utils import *
 import numpy as np
 
 def is_valid_coloring(g, colorMap):

@@ -1,2 +1,2 @@
-from utils.coloration_utils import is_valid_coloring, is_valid_packing_coloring
-from utils.graph_utils import get_distance_matrix, get_adjacency_matrix
+from packing_coloring.utils.coloration_utils import is_valid_coloring, is_valid_packing_coloring
+from packing_coloring.utils.graph_utils import get_distance_matrix, get_adjacency_matrix
