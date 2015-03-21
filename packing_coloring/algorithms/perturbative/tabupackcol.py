@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import numpy
+
+from packing_coloring.algorithms.search_space.complete_illegal_col import *
+from packing_coloring.algorithms.solution import *
 from packing_coloring.algorithms.constructive.rlf_algo import rlf_algorithm
 
 class TabuPackCol:
