@@ -4,17 +4,17 @@ import numpy as np
 import graph_tool.all as gt
 from packing_coloring.utils.graph_utils import *
 
+
 class GraphProblem:
     def __init__(self, graph):
         # Define the distance matrix,
-        # which is used to know the topologie of the problem's graph 
+        # which is used to know the topologie of the problem's graph
         self.dist_matrix = np.matrix([], dtype=int)
         if type(graph) is gt.Graph:
             dist = gt.shortest_distance(graph)
-            dim = g.num_vertices()
             for v in g.vertices():
-                self.dist_matrix = np.append(self.dist_matrix, 
-                    np.array(dist[v], ndmin=2), axis=0)
+                self.dist_matrix = np.append(self.dist_matrix,
+                                             np.array(dist[v], ndmin=2), axis=0)
             self.dist_matrix = np.delete(self.dist_matrix, 0, 0)
             self.dist_matrix = np.asmatrix(self.dist_matrix)
         else:
@@ -29,7 +29,7 @@ class GraphProblem:
                 d_mat = np.matrix(graph)
 
             else:
-                #TODO: throw exception
+                # TODO: throw exception
                 pass
 
             if np.all(np.logical_or(d_mat == 0, d_mat == 1)):
@@ -38,12 +38,22 @@ class GraphProblem:
                 self.dist_matrix = d_mat
 
         if self.dist_matrix.shape[0] != self.dist_matrix.shape[1]:
-            #TODO: throw exception
+            # TODO: throw exception
             pass
 
         self.v_size = self.dist_matrix.shape[0]
+        self.diam = np.max(self.dist_matrix)
         self._closeness_values = None
         self._betweenness_values = None
+
+    def get_diam(self):
+        return self.diam
+
+    def __getitem__(self, key):
+        try:
+            return self.dist_matrix[key].A1
+        except IndexError:
+            raise IndexError("index out of bound: {0}".format(key))
 
     @property
     def closeness_values(self):
@@ -60,4 +70,3 @@ class GraphProblem:
             v_bet, e_bet = gt.betweenness(g)
             self._betweenness_values = v_bet.a
         return self._betweenness_values
-
