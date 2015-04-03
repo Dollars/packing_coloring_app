@@ -2,21 +2,24 @@
 
 import numpy as np
 
+
 def k_colorable_set(prob, sol, k_col):
-	k_colorable = sol.uncolored()
-	k_colored = (sol.pack_col == k_col)
-	for v in np.arange(prob.v_size)[k_colored]:
-		good_dist = (prob.dist_matrix[v].A1 > k_col)
-		k_colorable = np.logical_and(k_colorable, good_dist)
-	return k_colorable
+    k_colorable = sol.uncolored()
+    k_colored = (sol.pack_col == k_col)
+    for v in np.arange(prob.v_size)[k_colored]:
+        good_dist = (prob.dist_matrix[v].A1 > k_col)
+        k_colorable = np.logical_and(k_colorable, good_dist)
+    return k_colorable
+
 
 def k_uncolorable_set(prob, sol, k_col):
-	k_uncolorable = sol.colored()
-	k_colored = (sol.pack_col == k_col)
-	for v in np.arange(prob.v_size)[k_colored]:
-		bad_dist = (prob.dist_matrix[v].A1 <= k_col)
-		k_uncolorable = np.logical_or(k_uncolorable, bad_dist)
-	return k_uncolorable
+    k_uncolorable = sol.colored()
+    k_colored = (sol.pack_col == k_col)
+    for v in np.arange(prob.v_size)[k_colored]:
+        bad_dist = (prob.dist_matrix[v].A1 <= k_col)
+        k_uncolorable = np.logical_or(k_uncolorable, bad_dist)
+    return k_uncolorable
+
 
 # TODO: add sumplementary sorting criterion ?
 def partition_next_vertex(prob, sol, k_col):
