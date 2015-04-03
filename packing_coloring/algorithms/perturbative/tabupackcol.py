@@ -2,6 +2,7 @@
 
 import numpy as np
 import numpy.random as rd
+import time
 
 from packing_coloring.algorithms.search_space.complete_illegal_col import *
 from packing_coloring.algorithms.solution import *
@@ -22,7 +23,7 @@ def tabu_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
 
     score = count_conflict(prob, sol)
     while score > 0 and max_iter > 0:
-        vertex, col = best_one_move(prob, sol, colors, tabu_list)
+        vertex, col = best_one_exchange(prob, sol, colors, tabu_list)
 
         prev_col = sol[vertex]
         sol[vertex] = col
@@ -43,7 +44,9 @@ def tabu_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
     return sol
 
 
-def tabu_pack_col(prob, k_lim, k_count=5, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
+def tabu_pack_col(prob, k_lim, k_count=2, sol=None, tt_a=10, tt_d=0.5, max_iter=1000, duration=30):
+    end_time = time.time()+(duration*60)
+
     if sol is None:
         sol = rlf_algorithm(prob)
     lim_col = sol.get_max_col()
@@ -62,7 +65,10 @@ def tabu_pack_col(prob, k_lim, k_count=5, sol=None, tt_a=10, tt_d=0.5, max_iter=
                 best_sol = new_sol.copy()
         else:
             k_col = k_col + 1
-        if k_col == k_lim:
-            count += 1
+            if k_col == k_lim:
+                count += 1
+
+        if time.time() >= end_time:
+            break
 
     return best_sol

@@ -33,7 +33,7 @@ def count_conflict(prob, sol):
     return conflicting
 
 
-def best_one_move(prob, sol, colors, tabu_list=None):
+def best_one_exchange(prob, sol, colors, tabu_list=None):
     vertices = np.arange(prob.v_size)
     curent_score = count_conflict(prob, sol)
     best_score = float("inf")

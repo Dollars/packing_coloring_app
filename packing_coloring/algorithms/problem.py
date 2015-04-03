@@ -56,6 +56,10 @@ class GraphProblem:
             raise IndexError("index out of bound: {0}".format(key))
 
     @property
+    def adj_matrix(self):
+        return self.dist_matrix == 1
+
+    @property
     def closeness_values(self):
         if self._closeness_values is None:
             g = graph_from_dist(self.dist_matrix)
