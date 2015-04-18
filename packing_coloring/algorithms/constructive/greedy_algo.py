@@ -8,7 +8,7 @@ def assign_min_pcol(prob, coloring, vi):
     vi_dist = prob[vi]
 
     k_col = 1
-    while  k_col < len(coloring):
+    while k_col < len(coloring):
         is_k_col = (coloring == k_col)
         is_k_dist = (vi_dist <= k_col)
         is_k_dist[vi] = False

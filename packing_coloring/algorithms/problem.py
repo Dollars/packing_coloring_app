@@ -11,19 +11,14 @@ class GraphProblem:
         # which is used to know the topologie of the problem's graph
         self.dist_matrix = np.matrix([], dtype=int)
         if type(graph) is gt.Graph:
-            dist = gt.shortest_distance(graph)
-            for v in g.vertices():
-                self.dist_matrix = np.append(self.dist_matrix,
-                                             np.array(dist[v], ndmin=2), axis=0)
-            self.dist_matrix = np.delete(self.dist_matrix, 0, 0)
-            self.dist_matrix = np.asmatrix(self.dist_matrix)
+            self.dist_matrix = get_distance_matrix(graph)
         else:
             d_mat = np.matrix([], dtype=int)
             if type(graph) is np.ndarray:
-                d_mat = np.asmatrix(graph)
+                d_mat = np.matrix(graph)
 
             elif type(graph) is np.matrix:
-                d_mat = np.copy(graph)
+                d_mat = np.matrix(np.copy(graph))
 
             elif type(graph) is list:
                 d_mat = np.matrix(graph)
@@ -33,7 +28,8 @@ class GraphProblem:
                 pass
 
             if np.all(np.logical_or(d_mat == 0, d_mat == 1)):
-                self.dist_matrix = graph_from_adj(d_mat)
+                g = graph_from_adj(d_mat)
+                self.dist_matrix = get_distance_matrix(g)
             else:
                 self.dist_matrix = d_mat
 

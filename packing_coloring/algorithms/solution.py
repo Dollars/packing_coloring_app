@@ -11,20 +11,13 @@ class PackColSolution:
             self.pack_col = np.zeros([], dtype=int)
         else:
             self.pack_col = np.zeros(g_prob.v_size, dtype=int)
-        self._fitness_value = None
-        self.evaluated = False
+            self.v_size = g_prob.v_size
 
     def copy(self):
         pcol = PackColSolution()
         pcol.pack_col = self.pack_col.copy()
-        pcol._fitness_value = self._fitness_value
-        pcol.evaluated = self.evaluated
+        pcol.v_size = self.v_size
         return pcol
-
-    def evaluate(self, func, prob):
-        self._fitness_value = func(prob, sol)
-        self.evaluated = True
-        return self._fitness_value
 
     def uncolored(self):
         return self.pack_col == 0
@@ -32,66 +25,92 @@ class PackColSolution:
     def colored(self):
         return self.pack_col != 0
 
+    def count_uncolored(self):
+        return np.sum(self.pack_col == 0)
+
+    def get_greedy_order(self):
+        return np.argsort(self.pack_col)
+
+    def pack_size(self, k_col):
+        return np.sum(self.pack_col == k_col)
+
     def is_complete(self):
-        return np.all(self.pack_col != 0)
+        return (not np.any(self.pack_col == 0))
 
     def is_partial(self):
         return np.any(self.pack_col == 0)
 
-    def get_score(self):
-        if self.evaluated:
-            return self._fitness_value
-        else:
-            return None
+    def get_sum(self):
+        return np.sum(self.pack_col)
 
-    def set_score(self, value):
-        self._fitness_value = value
-        self.evaluated = True
-
-    def del_score(self):
-        self._fitness_value = None
-        self.evaluated = False
-
-    score = property(get_score, set_score, del_score, "fitness value behavior.")
+    def get_partition(self):
+        max_pack = self.get_max_col()
+        packing = np.zeros((max_pack, self.v_size), dtype=int)
+        for k in range(max_pack):
+            packing[k] = (self.pack_col == k+1)
+        return packing
 
     def get_max_col(self):
         return max(self.pack_col)
 
-    def __lt__(self, val):
-        if np.issubdtype(type(val), np.integer):
-            return self.pack_col < val
-        elif type(val) is PackColSolution and val.evaluated:
-            return self.score < val.score
-
-    def __le__(self, val):
-        if np.issubdtype(type(val), np.integer):
-            return self.pack_col <= val
-        elif type(val) is PackColSolution and val.evaluated:
-            return self.score <= val.score
-
+    # Mutable object so, no __hash__ function will be defined
     def __eq__(self, val):
         if np.issubdtype(type(val), np.integer):
             return self.pack_col == val
-        elif type(val) is PackColSolution and val.evaluated:
-            return self.score == val.score
+        elif type(val) is PackColSolution:
+            return np.all(self.pack_col == val.pack_col)
 
     def __ne__(self, val):
         if np.issubdtype(type(val), np.integer):
             return self.pack_col != val
-        elif type(val) is PackColSolution and val.evaluated:
-            return self.score != val.score
+        elif type(val) is PackColSolution:
+            return np.any(self.pack_col != val.pack_col)
+
+    def __lt__(self, val):
+        if np.issubdtype(type(val), np.integer):
+            return self.pack_col < val
+        elif type(val) is PackColSolution:
+            if val.is_partial():
+                return np.sum(self.colored()) < np.sum(val.colored())
+            else:
+                return self.get_max_col() < val.get_max_col()
+
+    def __le__(self, val):
+        if np.issubdtype(type(val), np.integer):
+            return self.pack_col <= val
+        elif type(val) is PackColSolution:
+            if val.is_partial():
+                return np.sum(self.colored()) <= np.sum(val.colored())
+            else:
+                return self.get_max_col() <= val.get_max_col()
 
     def __gt__(self, val):
         if np.issubdtype(type(val), np.integer):
             return self.pack_col > val
-        elif type(val) is PackColSolution and val.evaluated:
-            return self.score > val.score
+        elif type(val) is PackColSolution:
+            if val.is_partial():
+                return np.sum(self.colored()) > np.sum(val.colored())
+            else:
+                return self.get_max_col() > val.get_max_col()
 
     def __ge__(self, val):
         if np.issubdtype(type(val), np.integer):
             return self.pack_col >= val
-        elif type(val) is PackColSolution and val.evaluated:
-            return self.score >= val.score
+        elif type(val) is PackColSolution:
+            if val.is_partial():
+                return np.sum(self.colored()) >= np.sum(val.colored())
+            else:
+                return self.get_max_col() >= val.get_max_col()
+
+    def __contains__(self, val):
+        if np.issubdtype(type(val), np.integer):
+            return val in self.pack_col
+        elif type(val) is PackColSolution:
+            if val.is_partial():
+                not_zeros = (val.pack_col != 0)
+                return (self.pack_col[not_zeros] == val.pack_col[not_zeros])
+            else:
+                return np.all(self.pack_col == val.pack_col)
 
     def __len__(self):
         return len(self.pack_col)
@@ -105,9 +124,6 @@ class PackColSolution:
     def __setitem__(self, key, value):
         try:
             self.pack_col[key] = value
-            if self.evaluated:
-                self._fitness_value = None
-                self.evaluated = False
         except IndexError:
             raise IndexError("index out of bound: {0}".format(key))
         except ValueError:

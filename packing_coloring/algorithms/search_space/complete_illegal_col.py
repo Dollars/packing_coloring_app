@@ -17,11 +17,10 @@ def conflicting_vertices(prob, sol):
 
 def count_conflicting_vertex(prob, sol):
     score = np.sum(conflicting_vertices(prob, sol))
-    sol.score = score
     return score
 
 
-def count_conflict(prob, sol):
+def count_conflicting_edge(prob, sol):
     conflicting = 0
     for v in range(prob.v_size):
         v_col = sol[v]
@@ -29,13 +28,14 @@ def count_conflict(prob, sol):
             sol.pack_col == v_col, prob[v] <= v_col)
         v_conflict[v] = False
         conflicting = conflicting + np.sum(v_conflict)
-    sol.score = conflicting
-    return conflicting
+    return np.floor(conflicting/2)
 
 
 def best_one_exchange(prob, sol, colors, tabu_list=None):
     vertices = np.arange(prob.v_size)
-    curent_score = count_conflict(prob, sol)
+    # curent_sum = sol.get_sum()
+    curent_score = count_conflicting_edge(prob, sol)
+    best_sum = float("inf")
     best_score = float("inf")
     changed_v = -1
     changed_col = 0
@@ -47,16 +47,20 @@ def best_one_exchange(prob, sol, colors, tabu_list=None):
                 continue
             new_sol = sol.copy()
             new_sol[v] = col
-            new_score = count_conflict(prob, new_sol)
-            if tabu_list[v, col-1] > 0:
-                if new_score < best_score and new_score < curent_score:
-                    best_score = new_score
-                    changed_v = v
-                    changed_col = col
-            else:
-                if new_score < best_score:
-                    best_score = new_score
-                    changed_v = v
-                    changed_col = col
+            new_score = count_conflicting_edge(prob, new_sol)
+            new_sum = new_sol.get_sum()
+            if new_score < best_score or (new_score == best_score and new_sum < best_sum):
+                if tabu_list[v, col-1] == 0:
+                        best_score = new_score
+                        best_sum = new_sum
+                        changed_v = v
+                        changed_col = col
+                else:
+                    # if new_score < curent_score or new_sum < curent_sum:
+                    if new_score < curent_score:
+                        best_score = new_score
+                        best_sum = new_sum
+                        changed_v = v
+                        changed_col = col
 
     return changed_v, changed_col
