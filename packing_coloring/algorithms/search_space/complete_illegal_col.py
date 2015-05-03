@@ -31,36 +31,33 @@ def count_conflicting_edge(prob, sol):
     return np.floor(conflicting/2)
 
 
-def best_one_exchange(prob, sol, colors, tabu_list=None):
+def best_one_exchange(prob, sol, fitness, score, the_best_score, colors, tabu_list=None):
     vertices = np.arange(prob.v_size)
-    # curent_sum = sol.get_sum()
-    curent_score = count_conflicting_edge(prob, sol)
+
     best_sum = float("inf")
     best_score = float("inf")
     changed_v = -1
     changed_col = 0
 
-    for v in vertices[conflicting_vertices(prob, sol)]:
+    for v in vertices:
         v_col = sol[v]
         for col in colors:
             if col == v_col:
                 continue
             new_sol = sol.copy()
             new_sol[v] = col
-            new_score = count_conflicting_edge(prob, new_sol)
+            new_score = score + fitness[v, col-1]
             new_sum = new_sol.get_sum()
             if new_score < best_score or (new_score == best_score and new_sum < best_sum):
                 if tabu_list[v, col-1] == 0:
-                        best_score = new_score
-                        best_sum = new_sum
-                        changed_v = v
-                        changed_col = col
-                else:
-                    # if new_score < curent_score or new_sum < curent_sum:
-                    if new_score < curent_score:
-                        best_score = new_score
-                        best_sum = new_sum
-                        changed_v = v
-                        changed_col = col
+                    best_score = new_score
+                    best_sum = new_sum
+                    changed_v = v
+                    changed_col = col
+                elif new_score < the_best_score:
+                    best_score = new_score
+                    best_sum = new_sum
+                    changed_v = v
+                    changed_col = col
 
     return changed_v, changed_col

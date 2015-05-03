@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from gi.repository import Gtk
+import numpy as np
 
 class MyWindow(Gtk.Window):
 
