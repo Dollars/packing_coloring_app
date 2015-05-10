@@ -284,3 +284,21 @@ def tutte_graph():
 
     g = graph_from_adj(adj_mat)
     return g
+
+
+def distance_graph(k, t, size):
+    nodes = np.arange(size, dtype=int)
+    gx = nx.Graph()
+    gx.add_nodes_from(nodes)
+
+    for i in nodes:
+        u = i + k
+        v = i + t
+        if u < size:
+            gx.add_edge(i, u)
+        if v < size:
+            gx.add_edge(i, v)
+
+    adj_mat = nx.to_numpy_matrix(gx)
+    g = graph_from_adj(adj_mat)
+    return g

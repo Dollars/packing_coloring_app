@@ -41,9 +41,26 @@ class GraphProblem:
         self.diam = np.max(self.dist_matrix)
         self._closeness_values = None
         self._betweenness_values = None
+        self._avg_kdegree = None
 
     def get_diam(self):
         return self.diam
+    
+    def avg_kdegree(self, k_col):
+        if self._avg_kdegree is None:
+            self._avg_kdegree = np.zeros(self.diam, dtype=float)
+            self._avg_kdegree[:] = -1.
+
+        if k_col < self.diam:
+            if self._avg_kdegree[k_col] == -1.:
+                norm = 1./self.v_size
+                kdist_degree = self.dist_matrix <= k_col
+                self._avg_kdegree[k_col] = norm * np.sum(kdist_degree)
+            return self._avg_kdegree[k_col]
+        elif k_col >= self.diam:
+            return 1
+        else:
+            return 0
 
     def __getitem__(self, key):
         try:

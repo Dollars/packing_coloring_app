@@ -43,12 +43,21 @@ class PackColSolution:
     def get_sum(self):
         return np.sum(self.pack_col)
 
-    def get_partition(self):
+    def get_partitions(self):
         max_pack = self.get_max_col()
         packing = np.zeros((max_pack, self.v_size), dtype=int)
         for k in range(max_pack):
             packing[k] = (self.pack_col == k+1)
         return packing
+
+    def get_kpartition(self, k_col):
+        return np.arange(self.v_size)[self.pack_col == k_col]
+
+    def get_by_permut(self, col):
+        permut = np.array([], dtype=int)
+        for k in col:
+            permut = np.append(permut, self.get_kpartition(k))
+        return permut
 
     def get_max_col(self):
         return max(self.pack_col)

@@ -81,8 +81,7 @@ def assign_col(prob, sol, k_col, v):
     return new_sol
 
 
-# TODO: try to explore more neighbors ?
-def best_i_swap(prob, sol, colors, tabu_list=None):
+def best_i_swap(prob, sol, the_best_score, colors, tabu_list=None):
     vertices = np.arange(prob.v_size)
     best_score = float("inf")
     best_sum = float("inf")
@@ -95,11 +94,17 @@ def best_i_swap(prob, sol, colors, tabu_list=None):
             new_score = new_sol.count_uncolored()
             new_sum = new_sol.get_sum()
 
-            if new_score < best_score or (new_score == best_score and new_sum < best_sum):
+            if new_score < best_score or (
+               new_score == best_score and new_sum < best_sum):
                 if tabu_list[v, col-1] == 0:
-                        best_score = new_score
-                        best_sum = new_sum
-                        changed_v = v
-                        changed_col = col
+                    best_score = new_score
+                    best_sum = new_sum
+                    changed_v = v
+                    changed_col = col
+                elif new_score < the_best_score:
+                    best_score = new_score
+                    best_sum = new_sum
+                    changed_v = v
+                    changed_col = col
 
     return changed_v, changed_col

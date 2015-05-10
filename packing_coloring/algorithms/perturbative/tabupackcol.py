@@ -124,29 +124,38 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5, max_iter=1000, d
                 count += 1
 
         if time.time() >= end_time:
+            print("time stop!")
             break
 
     return best_sol
 
 
-def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
+def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6, max_iter=1000, pillars=None):
     colors = np.arange(1, k_col+1)
     tabu_list = np.zeros((prob.v_size, k_col), dtype=int)
 
     if sol is None:
         sol = rlf_algorithm(prob)
+    if pillars is not None:
+        tabu_list[pillars] = max_iter + 1
+
     if k_col < prob.get_diam():
         sol[sol > k_col] = 0
     else:
         sol[sol > prob.get_diam()] = 0
 
+
     score = sol.count_uncolored()
+    best_score = score
     while score > 0 and max_iter > 0:
-        vertex, col = best_i_swap(prob, sol, colors, tabu_list)
+        vertex, col = best_i_swap(prob, sol, best_score, colors, tabu_list)
 
         prev_colored = (sol == col)
         sol = assign_col(prob, sol, col, vertex)
         score = sol.count_uncolored()
+
+        if score < best_score:
+            best_score = score
 
         tabu_list = tabu_list - 1
         tabu_list[tabu_list < 0] = 0
@@ -164,7 +173,7 @@ def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
     return sol
 
 
-def partial_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5, max_iter=1000, duration=30):
+def partial_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.6, max_iter=1000, duration=30, pillars=None):
     end_time = time.time()+(duration*60)
 
     if sol is None:
@@ -177,8 +186,8 @@ def partial_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5, max_iter=1000
     k_col = lim_col - 1
     k_lim = lim_col
     while count < k_count:
-        print(k_col)
-        new_sol = partial_kpack_col(prob, k_col, new_sol, tt_a, tt_d, max_iter)
+        # print(k_col)
+        new_sol = partial_kpack_col(prob, k_col, new_sol, tt_a, tt_d, max_iter, pillars)
         if new_sol.get_max_col() == k_col:
             k_lim = k_col
             k_col = k_col - 1
