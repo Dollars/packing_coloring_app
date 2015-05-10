@@ -130,25 +130,30 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5, max_iter=1000, d
     return best_sol
 
 
-def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6, max_iter=1000, pillars=None):
+def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6, max_iter=1000):
     colors = np.arange(1, k_col+1)
     tabu_list = np.zeros((prob.v_size, k_col), dtype=int)
 
     if sol is None:
         sol = rlf_algorithm(prob)
-    if pillars is not None:
-        tabu_list[pillars] = max_iter + 1
-
-    if k_col < prob.get_diam():
-        sol[sol > k_col] = 0
+    if np.any(sol == 0):
+        tabu_list[sol != 0] = max_iter + 1
+        for v in np.arange(prob.v_size)[sol != 0]:
+            v_col = sol[v]
+            influences = (prob.dist_matrix[v] <= v_col).A1
+            tabu_list[influences, v_col-1] = max_iter + 1
     else:
-        sol[sol > prob.get_diam()] = 0
-
+        if k_col < prob.get_diam():
+            sol[sol > k_col] = 0
+        else:
+            sol[sol > prob.get_diam()] = 0
 
     score = sol.count_uncolored()
     best_score = score
     while score > 0 and max_iter > 0:
         vertex, col = best_i_swap(prob, sol, best_score, colors, tabu_list)
+        if vertex == -1:
+            break
 
         prev_colored = (sol == col)
         sol = assign_col(prob, sol, col, vertex)
@@ -173,11 +178,13 @@ def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6, max_iter=1000, p
     return sol
 
 
-def partial_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.6, max_iter=1000, duration=30, pillars=None):
+def partial_pack_col(prob, k_count=3, sol=None, start_col=None, tt_a=10, tt_d=0.6, max_iter=1000, duration=30):
     end_time = time.time()+(duration*60)
 
     if sol is None:
         sol = rlf_algorithm(prob)
+    elif np.any(sol == 0):
+        sol = partial_kpack_col(prob, start_col, sol, tt_a, tt_d, max_iter)
     lim_col = sol.get_max_col()
     best_sol = sol.copy()
     new_sol = sol.copy()
@@ -187,7 +194,7 @@ def partial_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.6, max_iter=1000
     k_lim = lim_col
     while count < k_count:
         # print(k_col)
-        new_sol = partial_kpack_col(prob, k_col, new_sol, tt_a, tt_d, max_iter, pillars)
+        new_sol = partial_kpack_col(prob, k_col, new_sol, tt_a, tt_d, max_iter)
         if new_sol.get_max_col() == k_col:
             k_lim = k_col
             k_col = k_col - 1

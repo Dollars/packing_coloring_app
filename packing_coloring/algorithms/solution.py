@@ -43,11 +43,18 @@ class PackColSolution:
     def get_sum(self):
         return np.sum(self.pack_col)
 
+    def get_kcol_cover(self, prob, k_col):
+        kcol_nodes = self.pack_col == k_col
+        dist_mat = prob.dist_matrix[kcol_nodes]
+        cover_score = np.sum(dist_mat <= k_col)
+        cover_score -= np.sum(kcol_nodes)
+        return cover_score
+
     def get_partitions(self):
         max_pack = self.get_max_col()
-        packing = np.zeros((max_pack, self.v_size), dtype=int)
-        for k in range(max_pack):
-            packing[k] = (self.pack_col == k+1)
+        packing = np.zeros((max_pack+1, self.v_size), dtype=int)
+        for k in range(max_pack+1):
+            packing[k] = (self.pack_col == k)
         return packing
 
     def get_kpartition(self, k_col):
