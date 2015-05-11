@@ -183,7 +183,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, tt_a=10, tt_d=0.
 
     if sol is None:
         sol = rlf_algorithm(prob)
-    elif np.any(sol == 0):
+    elif start_col is not None:
         sol = partial_kpack_col(prob, start_col, sol, tt_a, tt_d, max_iter)
     lim_col = sol.get_max_col()
     best_sol = sol.copy()

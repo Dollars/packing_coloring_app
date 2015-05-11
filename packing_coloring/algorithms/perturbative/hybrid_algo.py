@@ -67,6 +67,45 @@ def crossover(prob, sols):
     return greedy_algorithm(prob, child_permut)
 
 
+def crossover_cx(prob, sols):
+    p1 = sols[0].get_greedy_order()
+    p2 = sols[1].get_greedy_order()
+    child1 = np.zeros(prob.v_size, dtype=int)
+    child2 = np.zeros(prob.v_size, dtype=int)
+
+    positions = np.arange(prob.v_size, dtype=int)
+    order1 = np.argsort(p1)
+    inplace = p1 == p2
+    child1[inplace] = p1[inplace]
+    child2[inplace] = p2[inplace]
+    positions[inplace] = -1
+    
+    cycle_nbr = 0
+    while np.any(positions != -1):
+        cycle = [np.argmax(positions > -1)]
+
+        while p1[cycle[0]] != p2[cycle[-1]]:
+            step = p2[cycle[-1]]
+            pos = order1[step]
+            cycle.append(pos)
+        positions[cycle] = -1
+
+        if cycle_nbr % 2 == 0:
+            child1[cycle] = p1[cycle]
+            child2[cycle] = p2[cycle]
+        else:
+            child1[cycle] = p2[cycle]
+            child2[cycle] = p1[cycle]
+        cycle_nbr += 1
+
+    sol1 = greedy_algorithm(prob, child1)
+    sol2 = greedy_algorithm(prob, child2)
+    if sol1.get_max_col() <= sol2.get_max_col():
+        return sol1
+    else:
+        return sol2
+
+
 def crossover2(prob, sols):
     child = PackColSolution(prob)
     diam = prob.get_diam()
@@ -184,8 +223,8 @@ def hybrid_algorithm(prob, pop_size, nbr_generation, tournament_size,
     for i in range(nbr_generation):
         print("generation #", i)
         parents = choose_parents(pop, 2, tournament_size)
-        child = crossover(prob, parents)
-        print("child:", child.get_max_col())
+        child = crossover_cx(prob, parents)
+        print("child:", child.get_max_col(), np.sum(child == 0))
         child = local_search(prob, sol=child, **ls_args)
         print("improved child: ", child.get_max_col())
         pop.append(child)
