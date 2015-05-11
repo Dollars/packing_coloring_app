@@ -73,7 +73,7 @@ def update_population(prob, pop, eval_func):
     sum_val = []
     pcol_val = []
     for s in pop:
-        sum_val.append(eval_func(s))
+        sum_val.append(eval_func(prob, s))
         pcol_val.append(s.get_max_col())
     order = np.lexsort((np.array(sum_val), np.array(pcol_val)))
     print(np.array([[i, j] for i, j in zip(pcol_val, sum_val)])[order])

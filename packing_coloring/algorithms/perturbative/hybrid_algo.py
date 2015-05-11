@@ -79,7 +79,7 @@ def crossover_cx(prob, sols):
     child1[inplace] = p1[inplace]
     child2[inplace] = p2[inplace]
     positions[inplace] = -1
-    
+
     cycle_nbr = 0
     while np.any(positions != -1):
         cycle = [np.argmax(positions > -1)]
@@ -106,7 +106,7 @@ def crossover_cx(prob, sols):
         return sol2
 
 
-def crossover2(prob, sols):
+def crossover_cover(prob, sols):
     child = PackColSolution(prob)
     diam = prob.get_diam()
     max_pack = min(diam-1, sols[0].get_max_col(), sols[1].get_max_col())
@@ -141,32 +141,47 @@ def crossover2(prob, sols):
     return child
 
 
-def crossover3(prob, sols):
+def crossover_area(prob, sols):
     child = PackColSolution(prob)
     diam = prob.get_diam()
     max_pack = min(diam-1, sols[0].get_max_col(), sols[1].get_max_col())
-    sol1_packing = sols[0].get_partitions()[:max_pack]
-    sol2_packing = sols[1].get_partitions()[:max_pack]
+    sol1_packing = sols[0].get_partitions()[:max_pack+1]
+    sol2_packing = sols[1].get_partitions()[:max_pack+1]
 
     for i in range(max_pack):
-        sol1_card = np.sum(sol1_packing, axis=1)
-        sol2_card = np.sum(sol2_packing, axis=1)
-        sol_card = np.add(sol1_card, sol2_card)
-
-        pack_i = -1
         new_packing = None
         if (i % 2) == 1:
-            sol1_card = np.nan_to_num(np.divide(sol1_card, sol_card))
-            pack_i = np.argsort(sol1_card)[-1]
-            new_packing = sol1_packing[pack_i]
-            sol2_packing[pack_i, :] = 0
+            sol_packing = sol1_packing
         else:
-            sol2_card = np.nan_to_num(np.divide(sol2_card, sol_card))
-            pack_i = np.argsort(sol2_card)[-1]
-            new_packing = sol2_packing[pack_i]
-            sol1_packing[pack_i, :] = 0
+            sol_packing = sol2_packing
 
-        child[new_packing == 1] = pack_i+1
+        scores = np.zeros(max_pack, dtype=int)
+        for col in np.arange(1, max_pack):
+            kcol_nodes = sol_packing[col]
+            dist_mat = prob.dist_matrix[kcol_nodes]
+            first_half = np.floor(col/2)
+            half_nodes = dist_mat <= first_half
+            half_nodes[dist_mat == 0] = False
+            area_score = np.sum(half_nodes)
+            area_nodes = np.sum(half_nodes, axis=0).A1 > 0
+
+            if len(area_nodes) != prob.v_size:
+                print("size matters !", len(area_nodes), prob.v_size)
+
+            if col % 2 == 1:
+                border = np.ceil(col/2)
+                border_nodes = np.sum(dist_mat == border, axis=0).A1 > 0
+                for y in np.arange(prob.v_size)[border_nodes]:
+                    y_neighbors = prob.dist_matrix[y] == 1
+                    common = np.logical_and(y_neighbors, area_nodes)
+                    area_score += np.sum(common)/np.sum(y_neighbors)
+
+            scores[col] = area_score
+
+        new_col = np.argmax(scores)
+        new_packing = sol_packing[new_col]
+        child[new_packing] = new_col
+
         sol1_packing[..., new_packing == 1] = 0
         sol2_packing[..., new_packing == 1] = 0
 
@@ -200,7 +215,7 @@ def update_population(prob, pop, eval_func):
     sum_val = []
     pcol_val = []
     for s in pop:
-        sum_val.append(eval_func(s))
+        sum_val.append(eval_func(prob, s))
         pcol_val.append(s.get_max_col())
     order = np.lexsort((np.array(sum_val), np.array(pcol_val)))
     print(np.array([[i, j] for i, j in zip(pcol_val, sum_val)])[order])
@@ -223,7 +238,7 @@ def hybrid_algorithm(prob, pop_size, nbr_generation, tournament_size,
     for i in range(nbr_generation):
         print("generation #", i)
         parents = choose_parents(pop, 2, tournament_size)
-        child = crossover_cx(prob, parents)
+        child = crossover_area(prob, parents)
         print("child:", child.get_max_col(), np.sum(child == 0))
         child = local_search(prob, sol=child, **ls_args)
         print("improved child: ", child.get_max_col())

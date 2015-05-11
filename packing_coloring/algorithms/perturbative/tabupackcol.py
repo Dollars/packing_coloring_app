@@ -83,10 +83,6 @@ def tabu_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
         fitness = update_fitness(prob, sol, fitness, colors, vertex, col)
         sol[vertex] = col
 
-        # if score != count_conflicting_edge(prob, sol):
-        #     print(max_iter)
-        #     print("Alert! Wrong score.")
-
         tabu_list = tabu_list - 1
         tabu_list[tabu_list < 0] = 0
         tabu_list[vertex, prev_col-1] = (
@@ -109,7 +105,6 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5, max_iter=1000, d
     k_col = lim_col - 1
     k_lim = lim_col
     while k_col < lim_col and count < k_count:
-        print(k_col, flush=True)
         new_sol = tabu_kpack_col(prob, k_col, new_sol, tt_a, tt_d, max_iter)
         new_score = count_conflicting_edge(prob, new_sol)
         if new_score == 0:

@@ -69,6 +69,40 @@ class PackColSolution:
     def get_max_col(self):
         return max(self.pack_col)
 
+    def get_k_area(self, prob, k_col):
+        kcol_nodes = (self.pack_col == k_col)
+        dist_mat = prob.dist_matrix.A
+        kcol_dist = dist_mat[kcol_nodes]
+
+        first_half = np.floor(float(k_col)/2)
+        half_nodes = kcol_dist <= first_half
+        half_nodes[kcol_dist == 0] = False
+        area_score = np.sum(half_nodes)
+
+        if k_col % 2 == 1:
+            border = np.ceil(float(k_col)/2)
+            for x in np.arange(prob.v_size)[kcol_nodes]:
+                x_dist = dist_mat[x]
+                x_half_nodes = (x_dist <= first_half)
+
+                border_nodes = (x_dist == border)
+                for y in np.arange(prob.v_size)[border_nodes]:
+                    y_neighbors = (dist_mat[y] == 1)
+                    common = np.logical_and(y_neighbors, x_half_nodes)
+                    area_score += float(np.sum(common))/np.sum(y_neighbors)
+
+        area_score = float(area_score)/np.sum(kcol_nodes)
+        return area_score
+
+    def get_area_score(self, prob):
+        scores = np.zeros(self.get_max_col(), dtype=float)
+        for col in np.arange(1, self.get_max_col()+1):
+            scores[col-1] = self.get_k_area(prob, col)
+        scores = np.nan_to_num(scores)
+        scores = 1./scores[scores != 0]
+        scores[scores == np.inf] = 0
+        return np.sum(scores)
+
     # Mutable object so, no __hash__ function will be defined
     def __eq__(self, val):
         if np.issubdtype(type(val), np.integer):
