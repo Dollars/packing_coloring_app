@@ -1,1 +1,1 @@
-from packing_coloring.graph_generator.generator import load_graph_file
+import packing_coloring.graph_generator.generator as generate

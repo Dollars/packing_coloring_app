@@ -6,6 +6,7 @@
 from graph_tool import Graph
 import re
 
+
 def parse_col(filename):
     g = Graph(directed=False)
     f = open(filename)
