@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from packing_coloring.algorithms.problem import *
+from packing_coloring.utils.benchmark_utils import search_step_trace
 
 
 class PackColSolution:
@@ -12,11 +12,13 @@ class PackColSolution:
         else:
             self.pack_col = np.zeros(g_prob.v_size, dtype=int)
             self.v_size = g_prob.v_size
+        self.record = None
 
     def copy(self):
         pcol = PackColSolution()
         pcol.pack_col = self.pack_col.copy()
         pcol.v_size = self.v_size
+        pcol.record = self.record
         return pcol
 
     def uncolored(self):
@@ -76,7 +78,7 @@ class PackColSolution:
 
         first_half = np.floor(float(k_col)/2)
         half_nodes = kcol_dist <= first_half
-        half_nodes[kcol_dist == 0] = False
+        # half_nodes[kcol_dist == 0] = False
         area_score = np.sum(half_nodes)
 
         if k_col % 2 == 1:
@@ -101,20 +103,19 @@ class PackColSolution:
         scores = np.nan_to_num(scores)
         scores = 1./scores[scores != 0]
         scores[scores == np.inf] = 0
-        return np.sum(scores)
+        return np.abs(1. - np.sum(scores))
 
-    # Mutable object so, no __hash__ function will be defined
     def __eq__(self, val):
         if np.issubdtype(type(val), np.integer):
             return self.pack_col == val
         elif type(val) is PackColSolution:
-            return np.all(self.pack_col == val.pack_col)
+            return np.all(np.equal(self.pack_col, val.pack_col))
 
     def __ne__(self, val):
         if np.issubdtype(type(val), np.integer):
             return self.pack_col != val
         elif type(val) is PackColSolution:
-            return np.any(self.pack_col != val.pack_col)
+            return np.any(np.not_equal(self.pack_col, val.pack_col))
 
     def __lt__(self, val):
         if np.issubdtype(type(val), np.integer):
@@ -182,3 +183,7 @@ class PackColSolution:
 
     def __str__(self):
         return str(self.pack_col)
+
+    def get_trace(self):
+        stats = search_step_trace.dump_all()
+        self.record = stats

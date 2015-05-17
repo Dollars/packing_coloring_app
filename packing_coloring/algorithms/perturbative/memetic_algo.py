@@ -15,19 +15,19 @@ def generate_population(prob, size, heuristic, init_args):
     indiv = heuristic(prob, random_init=False, **init_args)
     permut = np.arange(1, indiv.get_max_col()+1, dtype=int)
     pop.append(indiv)
-    print("init candidate #", 0, ":", indiv.get_max_col(), flush=True)
+    # print("init candidate #", 0, ":", indiv.get_max_col(), flush=True)
     for i in range(1, size):
         new_permut = rd.permutation(permut)
         priority = indiv.get_by_permut(new_permut)
         pop.append(greedy_algorithm(prob, priority))
-        print("init candidate #", i, ":", pop[i].get_max_col(), flush=True)
+        # print("init candidate #", i, ":", pop[i].get_max_col(), flush=True)
     return pop
 
 
 def generate_population2(prob, size, heuristic, init_args):
     pop = []
     for i in range(size):
-        print("init candidate #", i, flush=True)
+        # print("init candidate #", i, flush=True)
         indiv = heuristic(prob, random_init=(i != 0), **init_args)
         pop.append(indiv)
     return pop
@@ -86,13 +86,13 @@ def memetic_algorithm(prob, pop_size, nbr_generation, tournament_size, p_nbr,
 
     pop = generate_population(prob, pop_size, init_heur, init_args)
     pop = update_population(prob, pop, eval_func)
-    for i, indiv in enumerate(pop):
-        print("individu #", i, "'s quality:", indiv.get_max_col())
+    # for i, indiv in enumerate(pop):
+    #     print("individu #", i, "'s quality:", indiv.get_max_col())
 
     best_sol = pop[0]
     best_score = best_sol.get_max_col()
     for i in range(nbr_generation):
-        print("generation #", i)
+        # print("generation #", i)
         parents = choose_parents(pop, p_nbr, tournament_size)
         child = crossover(prob, parents, best_sol.get_max_col()-1,
                           local_search, ls_args)

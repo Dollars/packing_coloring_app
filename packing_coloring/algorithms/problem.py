@@ -2,7 +2,8 @@
 
 import numpy as np
 import graph_tool.all as gt
-from packing_coloring.utils.graph_utils import *
+from packing_coloring.utils.graph_utils import get_distance_matrix
+from packing_coloring.utils.graph_utils import graph_from_adj, graph_from_dist
 
 
 class GraphProblem:
@@ -42,10 +43,11 @@ class GraphProblem:
         self._closeness_values = None
         self._betweenness_values = None
         self._avg_kdegree = None
+        self.name = "{0}-{1}".format(self.v_size, np.sum(self.dist_matrix == 1))
 
     def get_diam(self):
         return self.diam
-    
+
     def avg_kdegree(self, k_col):
         if self._avg_kdegree is None:
             self._avg_kdegree = np.zeros(self.diam, dtype=float)

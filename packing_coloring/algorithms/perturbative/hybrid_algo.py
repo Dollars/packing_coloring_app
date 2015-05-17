@@ -15,19 +15,19 @@ def generate_population(prob, size, heuristic, init_args):
     indiv = heuristic(prob, random_init=False, **init_args)
     permut = np.arange(1, indiv.get_max_col()+1, dtype=int)
     pop.append(indiv)
-    print("init candidate #", 0, ":", indiv.get_max_col(), flush=True)
+    # print("init candidate #", 0, ":", indiv.get_max_col(), flush=True)
     for i in range(1, size):
         new_permut = rd.permutation(permut)
         priority = indiv.get_by_permut(new_permut)
         pop.append(greedy_algorithm(prob, priority))
-        print("init candidate #", i, ":", pop[i].get_max_col(), flush=True)
+        # print("init candidate #", i, ":", pop[i].get_max_col(), flush=True)
     return pop
 
 
 def generate_population2(prob, size, heuristic, init_args):
     pop = []
     for i in range(size):
-        print("init candidate #", i, flush=True)
+        # print("init candidate #", i, flush=True)
         indiv = heuristic(prob, random_init=(i != 0), **init_args)
         pop.append(indiv)
     return pop
@@ -202,13 +202,19 @@ def mutation(prob, sol, local_search, ls_args):
     v = np.argmax(bounds)
     v_col = min(sol[v], diam - 1) + 1
     adj_mat = (prob.dist_matrix == 1)
-    changes = (prob.dist_matrix[v] == v_col)
+    # changes = (prob.dist_matrix[v] == v_col)
+    changes = np.logical_or((prob.dist_matrix[v] == v_col), adj_mat[v])
     adj_mat[v] = changes
     adj_mat[..., v] = np.transpose(changes)
     new_prob = GraphProblem(adj_mat)
+    new_sol = PackColSolution(new_prob)
     new_sol = rlf_algorithm(new_prob)
     new_sol = local_search(new_prob, sol=new_sol, **ls_args)
-    return greedy_algorithm(prob, new_sol.get_greedy_order())
+
+    mutated = PackColSolution(prob)
+    mutated[v] = new_sol[v]
+    mutated = rlf_algorithm(prob, sol=mutated)
+    return mutated
 
 
 def update_population(prob, pop, eval_func):
@@ -228,7 +234,7 @@ def hybrid_algorithm(prob, pop_size, nbr_generation, tournament_size,
     pop = generate_population(prob, pop_size, init_heur, init_args)
     for i, indiv in enumerate(pop):
         pop[i] = local_search(prob, sol=indiv, **ls_args)
-        print("individu #", i, "'s quality:", pop[i].get_max_col())
+        # print("individu #", i, "'s quality:", pop[i].get_max_col())
 
     pop = update_population(prob, pop, eval_func)
 
@@ -236,18 +242,18 @@ def hybrid_algorithm(prob, pop_size, nbr_generation, tournament_size,
     best_score = best_sol.get_max_col()
 
     for i in range(nbr_generation):
-        print("generation #", i)
+        # print("generation #", i)
         parents = choose_parents(pop, 2, tournament_size)
         child = crossover_area(prob, parents)
-        print("child:", child.get_max_col(), np.sum(child == 0))
+        # print("child:", child.get_max_col(), np.sum(child == 0))
         child = local_search(prob, sol=child, **ls_args)
-        print("improved child: ", child.get_max_col())
+        # print("improved child: ", child.get_max_col())
         pop.append(child)
 
         child1 = mutation(prob, child, local_search, ls_args)
-        print("mutated child: ", child1.get_max_col())
+        # print("mutated child: ", child1.get_max_col())
         child1 = local_search(prob, sol=child1, **ls_args)
-        print("improved mutated child: ", child1.get_max_col())
+        # print("improved mutated child: ", child1.get_max_col())
         pop.append(child1)
 
         pop = update_population(prob, pop, eval_func)

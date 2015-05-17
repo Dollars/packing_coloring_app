@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 class Metaheuristic:
-    def __init__():
+    def __init__(self):
         self.bestSolution
         self.problem
         self.iteration = 0

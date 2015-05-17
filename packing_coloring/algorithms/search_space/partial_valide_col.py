@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from packing_coloring.utils.benchmark_utils import search_step_trace
 
 
+@search_step_trace
 def k_colorable_set(prob, sol, k_col):
     k_colorable = sol.uncolored()
     k_colored = (sol.pack_col == k_col)
@@ -12,6 +14,7 @@ def k_colorable_set(prob, sol, k_col):
     return k_colorable
 
 
+@search_step_trace
 def k_uncolorable_set(prob, sol, k_col):
     k_uncolorable = np.zeros_like(sol.colored())
     k_colored = (sol.pack_col == k_col)
@@ -19,10 +22,11 @@ def k_uncolorable_set(prob, sol, k_col):
         bad_dist = (prob.dist_matrix[v].A1 <= k_col)
         k_uncolorable = np.logical_or(k_uncolorable, bad_dist)
     k_uncolorable = np.logical_and(k_uncolorable, sol.uncolored())
-    
+
     return k_uncolorable
 
 
+@search_step_trace
 def coloried_and_k_uncolorable_set(prob, sol, k_col):
     k_uncolorable = sol.colored()
     k_colored = (sol.pack_col == k_col)
@@ -33,6 +37,7 @@ def coloried_and_k_uncolorable_set(prob, sol, k_col):
 
 
 # TODO: add sumplementary sorting criterion ?
+@search_step_trace
 def partition_next_vertex(prob, sol, k_col):
     vertices = np.arange(prob.v_size)
     k_col_set = k_colorable_set(prob, sol, k_col)
@@ -61,50 +66,59 @@ def partition_next_vertex(prob, sol, k_col):
     return v
 
 
+@search_step_trace
 def conflicting_vertices(prob, sol):
     conflicting = np.zeros(prob.v_size, dtype=bool)
     for v in range(prob.v_size):
         v_col = sol[v]
-        v_conflict = np.logical_and(
+        v_conflicts = np.logical_and(
             sol.pack_col == v_col, prob[v] <= v_col)
-        v_conflict[v] = False
-        conflicting = np.logical_or(conflicting, v_conflict)
+        v_conflicts[v] = False
+        conflicting = np.logical_or(conflicting, v_conflicts)
     return conflicting_vertices
 
 
+@search_step_trace
 def assign_col(prob, sol, k_col, v):
-    new_sol = sol.copy()
-    v_conflict = np.logical_and(
-            new_sol.pack_col == k_col, prob[v] <= k_col)
-    new_sol.pack_col[v_conflict] = 0
-    new_sol[v] = k_col
-    return new_sol
+    v_conflicts = np.logical_and(
+            sol[:] == k_col, prob[v] <= k_col)
+    v_conflicts[v] = False
+    return v_conflicts
 
 
-def best_i_swap(prob, sol, the_best_score, colors, tabu_list=None):
-    vertices = np.arange(prob.v_size)
+@search_step_trace
+def best_i_swap(prob, sol, the_best_score, colors, tabu_list):
+    uncolored = sol.uncolored()
+    vertices = np.arange(prob.v_size)[uncolored]
+
+    cur_score = np.sum(uncolored)
+    cur_sum = sol.get_sum()
     best_score = float("inf")
     best_sum = float("inf")
+
     changed_v = -1
     changed_col = 0
-
-    for v in vertices[sol.uncolored()]:
+    conflicts = None
+    for v in vertices:
         for col in colors:
-            new_sol = assign_col(prob, sol, col, v)
-            new_score = new_sol.count_uncolored()
-            new_sum = new_sol.get_sum()
+            v_conflicts = assign_col(prob, sol, col, v)
+            nbr_conflicts = np.sum(v_conflicts)
+            new_score = cur_score + (nbr_conflicts - 1)
+            new_sum = cur_sum + (col * (1 - nbr_conflicts))
 
             if new_score < best_score or (
                new_score == best_score and new_sum < best_sum):
-                if tabu_list[v, col-1] == 0:
+                if tabu_list[v, col-1] <= 0:
                     best_score = new_score
                     best_sum = new_sum
                     changed_v = v
                     changed_col = col
+                    conflicts = v_conflicts
                 elif new_score < the_best_score:
                     best_score = new_score
                     best_sum = new_sum
                     changed_v = v
                     changed_col = col
+                    conflicts = v_conflicts
 
-    return changed_v, changed_col
+    return changed_v, changed_col, conflicts
