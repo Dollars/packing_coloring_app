@@ -75,7 +75,8 @@ def tabu_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
     best_score = score
     best_sol = sol.copy()
     while score > 0 and max_iter > 0:
-        vertex, col = best_one_exchange(prob, sol, fitness, score, best_score, colors, tabu_list)
+        vertex, col = best_one_exchange(prob, sol, fitness, score,
+                                        best_score, colors, tabu_list)
         prev_col = sol[vertex]
 
         if col == 0:
@@ -134,55 +135,70 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5, max_iter=1000, d
     return best_sol
 
 
-@set_env
-def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
-                      max_iter=1000, count_max=10):
+def prepare_sol(prob, k_col, max_iter, sol=None):
+    has_pillars = False
     tabu_list = np.zeros((prob.v_size, k_col), dtype=int)
 
     if sol is None:
         sol = rlf_algorithm(prob)
-    if np.any(sol == 0):
-        print("zeros in the solution")
-        tabu_list[sol != 0] = max_iter + 1
+    elif np.any(sol == 0):
+        has_pillars = True
+
+    sol[sol >= k_col] = 0
+    diam = prob.get_diam()
+    if k_col >= diam:
+        sol[sol >= diam] = 0
+
+    if has_pillars:
+        print("has pillars")
+        # tabu_list[sol != 0] = max_iter + 1
         for v in np.arange(prob.v_size)[sol != 0]:
             v_col = sol[v]
             influences = (prob.dist_matrix[v] <= v_col).A1
             tabu_list[influences, v_col-1] = max_iter + 1
     else:
-        if k_col > prob.get_diam():
-            sol[sol >= prob.get_diam()] = 0
-        elif k_col < sol.get_max_col():
-            sol[sol > k_col] = 0
-        else:
-            samplea = rd.randint(0, 2, prob.v_size)
-            sampleb = rd.randint(0, 2, prob.v_size)
-            sol[sol == k_col] = 0
-            sol[samplea < sampleb] = 0
-            k_col -= 1
+        nbr_to_reach = np.ceil(float(prob.v_size) / k_col)
+        nbr_yet = np.sum(sol == 0)
+        if nbr_to_reach > nbr_yet:
+            mask = np.arange(prob.v_size)[sol != 0]
+            nbr = nbr_to_reach - nbr_yet
+            proba = sol[mask].astype(float) / k_col
+            proba = proba / np.sum(proba)
+            sample = rd.choice(mask, nbr, replace=False, p=proba)
+            sol[sample] = 0
 
+    return sol, tabu_list
+
+
+@set_env
+def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
+                      max_iter=1000, count_max=10):
+    if k_col >= sol.get_max_col():
+        k_col = sol.get_max_col() - 1
+    sol, tabu_list = prepare_sol(prob, k_col, max_iter, sol)
     colors = np.arange(1, k_col+1)
-    score = sol.count_uncolored()
+
+    best_sol = sol.copy()
+    best_score = score = sol.count_uncolored()
+
     if score == 0:
         print("no challenge men!", k_col - sol.get_max_col())
-    best_sol = sol.copy()
-    best_score = score
-    count = 0
-    while score > 0 and max_iter >= 0:
+
+    count_iter = count_slope = 0
+    while score > 0 and  count_iter <= max_iter:
         vertex, col, conflicts = best_i_swap(prob, sol, best_score,
                                              colors, tabu_list)
         if vertex == -1:
             print("tabue list too large")
             break
-
         sol[conflicts] = 0
         sol[vertex] = col
         prev_score = score
         score = sol.count_uncolored()
-
         if score == prev_score:
-            count += 1
+            count_slope += 1
         else:
-            count = 0
+            count_slope = 0
 
         if score < best_score:
             best_score = score
@@ -191,12 +207,11 @@ def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
 
         tabu_list = tabu_list - 1
         tabu_list[tabu_list < 0] = 0
-
-        tabue_tenure = (rd.randint(tt_a) + (tt_d * score * col) +
-                        np.floor(float(count)/count_max))
+        tabue_tenure = (rd.randint(tt_a) + (2 * tt_d * score * col) +
+                        np.ceil(float(count_slope)/count_max))
         tabu_list[conflicts, col-1] = tabue_tenure
 
-        max_iter -= 1
+        count_iter += 1
 
     if np.any(best_sol == 0):
         best_sol = rlf_algorithm(prob, best_sol)
@@ -220,21 +235,18 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
-        # print(k_col)
         sol = partial_kpack_col(prob, k_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
                                 max_iter=max_iter, count_max=count_max)
 
         max_col = sol.get_max_col()
+        if max_col >= k_lim:
+            count += 1
         if max_col <= k_col:
-            k_lim = k_col
             k_col = max_col - 1
             if max_col < best_sol.get_max_col():
                 count = 0
+                k_lim = k_col
                 best_sol = sol.copy()
-        else:
-            k_col = k_col + 1
-            if k_col >= k_lim:
-                count += 1
 
         if time.time() >= end_time:
             break
@@ -245,62 +257,44 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
 @set_env
 def react_partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
                             max_iter=1000, iter_period=100, tenure_inc=5):
+
+    if k_col >= sol.get_max_col():
+        k_col = sol.get_max_col() - 1
+    sol, tabu_list = prepare_sol(prob, k_col, max_iter, sol)
     colors = np.arange(1, k_col+1)
-    tabu_list = np.zeros((prob.v_size, k_col), dtype=int)
 
-    if sol is None:
-        sol = rlf_algorithm(prob)
-    if np.any(sol == 0):
-        tabu_list[sol != 0] = max_iter + 1
-        for v in np.arange(prob.v_size)[sol != 0]:
-            v_col = sol[v]
-            influences = (prob.dist_matrix[v] <= v_col).A1
-            tabu_list[influences, v_col-1] = max_iter + 1
-    else:
-        if k_col > prob.get_diam():
-            sol[sol >= prob.get_diam()] = 0
-        elif k_col < sol.get_max_col():
-            sol[sol > k_col] = 0
-        else:
-            print("no challenge men!", k_col - sol.get_max_col())
-            samplea = rd.randint(0, 2, prob.v_size)
-            sampleb = rd.randint(0, 2, prob.v_size)
-            sol[sol == k_col] = 0
-            sol[samplea < sampleb] = 0
-            k_col -= 1
-
-    score = sol.count_uncolored()
     best_sol = sol.copy()
-    best_score = score
+    best_score = score = sol.count_uncolored()
+
+    if score == 0:
+        print("no challenge men!", k_col - sol.get_max_col())
+
     min_score = float('inf')
     max_score = 0
     tt = tt_a
-    max_iter -= 1
-    while score > 0 and max_iter >= 0:
+    iter_count = 1
+    while score > 0 and iter_count <= max_iter:
         vertex, col, conflicts = best_i_swap(prob, sol, best_score,
                                              colors, tabu_list)
         if vertex == -1:
             break
-
         sol[conflicts] = 0
         sol[vertex] = col
         score = sol.count_uncolored()
-
         if score < min_score:
             min_score = score
         if score > max_score:
             max_score = score
-        if max_iter % iter_period == 0:
+        if iter_count % iter_period == 0:
             delta = max_score - min_score
             if delta < 1:
                 tt = tt + tenure_inc
             else:
                 tt = tt - 1
+                if tt < tt_a:
+                    tt = tt_a
             min_score = float('inf')
             max_score = 0
-
-        if tt < tt_a:
-            tt = tt_a
 
         if score < best_score:
             best_score = score
@@ -309,11 +303,10 @@ def react_partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
 
         tabu_list = tabu_list - 1
         tabu_list[tabu_list < 0] = 0
-
         tabue_tenure = (rd.randint(tt) + (tt_d * score * col))
         tabu_list[conflicts, col-1] = tabue_tenure
 
-        max_iter -= 1
+        iter_count += 1
 
     if np.any(best_sol == 0):
         best_sol = rlf_algorithm(prob, best_sol)

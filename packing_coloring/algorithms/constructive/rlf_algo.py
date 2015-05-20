@@ -3,8 +3,10 @@
 import numpy as np
 from packing_coloring.algorithms.search_space.partial_valide_col import *
 from packing_coloring.algorithms.solution import *
+from packing_coloring.utils.benchmark_utils import set_env
 
 
+@set_env
 def rlf_algorithm(prob, sol=None):
     if sol is not None:
         coloring = sol.copy()
@@ -20,4 +22,5 @@ def rlf_algorithm(prob, sol=None):
 
         k_col += 1
 
+    coloring.get_trace()
     return coloring

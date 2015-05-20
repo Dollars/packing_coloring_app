@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from packing_coloring.utils.benchmark_utils import search_step_trace
+from packing_coloring.utils import search_step_trace
 
 
 class PackColSolution:
@@ -54,9 +54,10 @@ class PackColSolution:
 
     def get_partitions(self):
         max_pack = self.get_max_col()
-        packing = np.zeros((max_pack+1, self.v_size), dtype=int)
+        packing = np.zeros((max_pack+1, self.v_size), dtype=bool)
         for k in range(max_pack+1):
-            packing[k] = (self.pack_col == k)
+            mask = (self.pack_col == k)
+            packing[k, mask] = True
         return packing
 
     def get_kpartition(self, k_col):

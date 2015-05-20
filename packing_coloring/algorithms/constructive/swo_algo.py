@@ -9,6 +9,7 @@ from packing_coloring.algorithms.constructive.neighborhood.closeness import *
 from packing_coloring.algorithms.constructive.neighborhood.betweenness import *
 from packing_coloring.algorithms.constructive.greedy_algo import *
 from packing_coloring.algorithms.constructive.rlf_algo import *
+from packing_coloring.utils.benchmark_utils import set_env, search_step_trace
 
 
 # Squeaky Wheel Optimizer
@@ -26,7 +27,7 @@ def swo_algorithm(prob, iter_count=500, blame_value=25, blame_rate=0.85, random_
         # print(cur_score)
 
         if cur_score < best_score:
-            best_sol = cur_sol
+            best_sol = cur_sol.copy()
             best_score = best_sol.get_max_col()
             priority_seq = best_sol.get_greedy_order()
             blame_treshold = np.ceil(blame_rate * min(best_score, prob.get_diam()))

@@ -1,1 +1,0 @@
-import packing_coloring.graph_generator.generator as generate

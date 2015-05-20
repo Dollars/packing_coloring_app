@@ -8,23 +8,35 @@ from packing_coloring.algorithms.problem import *
 from packing_coloring.algorithms.perturbative.tabupackcol import *
 from packing_coloring.algorithms.constructive.rlf_algo import rlf_algorithm
 from packing_coloring.algorithms.constructive.greedy_algo import greedy_algorithm
+from packing_coloring.utils.benchmark_utils import set_env, search_step_trace
 
 
 def generate_population(prob, size, heuristic, init_args):
+    print("Init population by permut")
     pop = []
     indiv = heuristic(prob, random_init=False, **init_args)
     permut = np.arange(1, indiv.get_max_col()+1, dtype=int)
     pop.append(indiv)
+
     # print("init candidate #", 0, ":", indiv.get_max_col(), flush=True)
+    indiv.get_trace()
+    search_step_trace.clear_all()
+
     for i in range(1, size):
         new_permut = rd.permutation(permut)
         priority = indiv.get_by_permut(new_permut)
-        pop.append(greedy_algorithm(prob, priority))
-        # print("init candidate #", i, ":", pop[i].get_max_col(), flush=True)
+        new_indiv = greedy_algorithm(prob, priority)
+        pop.append(new_indiv)
+
+        # print("init candidate #", i, ":", pop[i].get_max_col(), flush=True)        
+        new_indiv.get_trace()
+        search_step_trace.clear_all()
+
     return pop
 
 
 def generate_population2(prob, size, heuristic, init_args):
+    print("Init population by random order")
     pop = []
     for i in range(size):
         # print("init candidate #", i, flush=True)
@@ -33,8 +45,10 @@ def generate_population2(prob, size, heuristic, init_args):
     return pop
 
 
+@search_step_trace
 def selection(pop, tournament_size=2):
     # Tournament Selection
+    print("Tournament ", end="")
     indices = np.arange(len(pop), dtype=int)
     best = rd.choice(indices, 1)[0]
 
@@ -42,10 +56,13 @@ def selection(pop, tournament_size=2):
         adv = rd.choice(np.delete(indices, best), 1)[0]
         if pop[adv] < pop[best]:
             best = adv
+    print(best)
     return pop[best]
 
 
+@search_step_trace
 def choose_parents(pop, nbr, tournament_size):
+    print("Parents selection")
     pop_indices = np.arange(len(pop), dtype=int)
     parents_i = []
     for i in range(min(nbr, len(pop))):
@@ -55,7 +72,9 @@ def choose_parents(pop, nbr, tournament_size):
     return parents
 
 
+@search_step_trace
 def crossover(prob, sols):
+    print("Crossover stupid and easy")
     p1 = sols[0].get_greedy_order()
     p2 = sols[1].get_greedy_order()
     child_permut = p1
@@ -67,7 +86,9 @@ def crossover(prob, sols):
     return greedy_algorithm(prob, child_permut)
 
 
+@search_step_trace
 def crossover_cx(prob, sols):
+    print("Crossover cycle")
     p1 = sols[0].get_greedy_order()
     p2 = sols[1].get_greedy_order()
     child1 = np.zeros(prob.v_size, dtype=int)
@@ -106,21 +127,25 @@ def crossover_cx(prob, sols):
         return sol2
 
 
+@search_step_trace
 def crossover_cover(prob, sols):
+    print("Crossover cover")
+    diff_rate = np.sum(np.equal(sols[0][:], sols[1][:]))/prob.v_size
     child = PackColSolution(prob)
     diam = prob.get_diam()
-    max_pack = min(diam-1, sols[0].get_max_col(), sols[1].get_max_col())
-    sol1_packing = sols[0].get_partitions()[:max_pack+1]
-    sol2_packing = sols[1].get_partitions()[:max_pack+1]
+    max_pack = min(diam-1, sols[0].get_max_col(), sols[1].get_max_col()) - 1
+    max_pack = int(np.ceil(max_pack * (1. - diff_rate)))
+    sol1_packing = sols[0].get_partitions()[:max_pack]
+    sol2_packing = sols[1].get_partitions()[:max_pack]
 
-    for i in range(max_pack):
+    for i in range(max_pack-1):
         new_packing = None
         if (i % 2) == 1:
             sol_packing = sol1_packing
         else:
             sol_packing = sol2_packing
 
-        scores = np.zeros(max_pack, dtype=int)
+        scores = np.zeros(max_pack, dtype=float)
         for col in np.arange(1, max_pack):
             kcol_nodes = sol_packing[col]
             dist_mat = prob.dist_matrix[kcol_nodes]
@@ -128,70 +153,103 @@ def crossover_cover(prob, sols):
             cover_score -= np.sum(kcol_nodes)
             scores[col] = cover_score
 
-        new_col = np.argmax(scores)
-        new_packing = sol_packing[new_col]
+        # new_col = np.argmax(scores)
+        scores[scores == 0] = float("inf")
+        new_col = np.argmin(scores)
+        new_packing = np.copy(sol_packing[new_col])
         child[new_packing] = new_col
 
-        sol1_packing[..., new_packing == 1] = 0
-        sol2_packing[..., new_packing == 1] = 0
+        sol1_packing[..., new_packing] = False
+        sol2_packing[..., new_packing] = False
+        sol1_packing[new_col] = False
+        sol2_packing[new_col] = False
 
     if np.any(child == 0):
         child = rlf_algorithm(prob, child)
+    print(child.get_area_score(prob))
+
+    if count_conflicting_edge(prob, child) > 0:
+        print("Fail !")
 
     return child
 
 
+@search_step_trace
 def crossover_area(prob, sols):
+    print("Crossover area")
     child = PackColSolution(prob)
     diam = prob.get_diam()
-    max_pack = min(diam-1, sols[0].get_max_col(), sols[1].get_max_col())
-    sol1_packing = sols[0].get_partitions()[:max_pack+1]
-    sol2_packing = sols[1].get_partitions()[:max_pack+1]
+    diff_rate = np.sum(np.equal(sols[0][:], sols[1][:]))/prob.v_size
+    max_pack = min(diam-1, sols[0].get_max_col(), sols[1].get_max_col()) - 1
+    max_pack = int(np.ceil(max_pack * diff_rate))
+    sol1_packing = sols[0].get_partitions()[:max_pack]
+    sol2_packing = sols[1].get_partitions()[:max_pack]
 
-    for i in range(max_pack):
+    print(diff_rate)
+    for i in range(max(2, max_pack-1)):
         new_packing = None
-        if (i % 2) == 1:
+        sol_packing = None
+        if (i % 2) == 0:
             sol_packing = sol1_packing
         else:
             sol_packing = sol2_packing
 
-        scores = np.zeros(max_pack, dtype=int)
-        for col in np.arange(1, max_pack):
+        if np.sum(sol_packing) <= 0:
+            break
+
+        scores = np.zeros(max_pack, dtype=float)
+        for col in np.arange(1, max_pack-1):
             kcol_nodes = sol_packing[col]
-            dist_mat = prob.dist_matrix[kcol_nodes]
-            first_half = np.floor(col/2)
-            half_nodes = dist_mat <= first_half
-            half_nodes[dist_mat == 0] = False
-            area_score = np.sum(half_nodes)
-            area_nodes = np.sum(half_nodes, axis=0).A1 > 0
+            if np.sum(kcol_nodes) > 0:
+                dist_mat = prob.dist_matrix.A
+                kcol_dist = dist_mat[kcol_nodes]
 
-            if len(area_nodes) != prob.v_size:
-                print("size matters !", len(area_nodes), prob.v_size)
-
-            if col % 2 == 1:
-                border = np.ceil(col/2)
-                border_nodes = np.sum(dist_mat == border, axis=0).A1 > 0
-                for y in np.arange(prob.v_size)[border_nodes]:
-                    y_neighbors = prob.dist_matrix[y] == 1
-                    common = np.logical_and(y_neighbors, area_nodes)
-                    area_score += np.sum(common)/np.sum(y_neighbors)
-
-            scores[col] = area_score
+                first_half = np.floor(float(col)/2)
+                half_nodes = kcol_dist <= first_half
+                # half_nodes[dist_mat == 0] = False
+                area_score = np.sum(half_nodes)
+                if col % 2 == 1:
+                    border = np.ceil(float(col)/2)
+                    for x in np.arange(prob.v_size)[kcol_nodes]:
+                        x_dist = dist_mat[x]
+                        x_half_nodes = (x_dist <= first_half)
+                        border_nodes = (x_dist == border)
+                        for y in np.arange(prob.v_size)[border_nodes]:
+                            y_neighbors = (dist_mat[y] == 1)
+                            common = np.logical_and(y_neighbors, x_half_nodes)
+                            area_score += (float(np.sum(common)) /
+                                           np.sum(y_neighbors))
+                # area_score = area_score/np.sum(kcol_nodes)
+                scores[col] = area_score
 
         new_col = np.argmax(scores)
-        new_packing = sol_packing[new_col]
+        # scores[scores == 0] = float("inf")
+        # new_col = np.argmin(scores)
+        new_packing = np.copy(sol_packing[new_col])
         child[new_packing] = new_col
 
-        sol1_packing[..., new_packing == 1] = 0
-        sol2_packing[..., new_packing == 1] = 0
+        sol1_packing[..., new_packing] = False
+        sol2_packing[..., new_packing] = False
+        sol1_packing[new_col] = False
+        sol2_packing[new_col] = False
+
+    # colors = np.copy(np.unique(child[:]))
+    # for i, j in enumerate(colors):
+    #     if i < j:
+    #         child[child == j] = i
 
     if np.any(child == 0):
         child = rlf_algorithm(prob, child)
 
+    if count_conflicting_edge(prob, child) > 0:
+        print("Fail !")
+
     return child
 
 
+@search_step_trace
 def mutation(prob, sol, local_search, ls_args):
+    print("Mutation")
     diam = prob.get_diam()
     bounds = np.zeros(prob.v_size, dtype=int)
     for i in range(sol.v_size):
@@ -211,13 +269,19 @@ def mutation(prob, sol, local_search, ls_args):
     new_sol = rlf_algorithm(new_prob)
     new_sol = local_search(new_prob, sol=new_sol, **ls_args)
 
-    mutated = PackColSolution(prob)
-    mutated[v] = new_sol[v]
-    mutated = rlf_algorithm(prob, sol=mutated)
+    # mutated = PackColSolution(prob)
+    # mutated[v] = new_sol[v]
+    # mutated = rlf_algorithm(prob, sol=mutated)
+
+    ordering = new_sol.get_greedy_order()
+    mutated = greedy_algorithm(prob, ordering)
+    print("mutation diff:", np.sum(np.equal(mutated[:], sol[:]))/prob.v_size)
     return mutated
 
 
+@search_step_trace
 def update_population(prob, pop, eval_func):
+    print("Update")
     sum_val = []
     pcol_val = []
     for s in pop:
@@ -229,11 +293,11 @@ def update_population(prob, pop, eval_func):
     return pop
 
 
-def hybrid_algorithm(prob, pop_size, nbr_generation, tournament_size,
+def hybrid_algorithm(prob, pop_size, nbr_gen, pool_nbr, replace_rate, mut_prob,
                      local_search, ls_args, init_heur, init_args, eval_func):
-    pop = generate_population(prob, pop_size, init_heur, init_args)
-    for i, indiv in enumerate(pop):
-        pop[i] = local_search(prob, sol=indiv, **ls_args)
+    pop = generate_population2(prob, pop_size, init_heur, init_args)
+    # for i, indiv in enumerate(pop):
+    #     pop[i] = local_search(prob, sol=indiv, **ls_args)
         # print("individu #", i, "'s quality:", pop[i].get_max_col())
 
     pop = update_population(prob, pop, eval_func)
@@ -241,26 +305,39 @@ def hybrid_algorithm(prob, pop_size, nbr_generation, tournament_size,
     best_sol = pop[0]
     best_score = best_sol.get_max_col()
 
-    for i in range(nbr_generation):
-        # print("generation #", i)
-        parents = choose_parents(pop, 2, tournament_size)
-        child = crossover_area(prob, parents)
-        # print("child:", child.get_max_col(), np.sum(child == 0))
-        child = local_search(prob, sol=child, **ls_args)
-        # print("improved child: ", child.get_max_col())
-        pop.append(child)
+    new_gen_size = np.ceil(pop_size * replace_rate)
+    for i in range(nbr_gen):
+        print("############### generation", i, "################")
+        new_gen = []
+        while len(new_gen) < new_gen_size:
+            parents = choose_parents(pop, 2, pool_nbr)
+            print("Parents: (", parents[0].get_max_col(), ", ", parents[1].get_max_col(),")", sep="")
+            child = crossover_area(prob, parents)
+            print("Resulting child", child.get_max_col(), end="")
+            child = local_search(prob, sol=child, **ls_args)
+            print(" ->", child.get_max_col())
+            new_gen.append(child)
 
-        child1 = mutation(prob, child, local_search, ls_args)
-        # print("mutated child: ", child1.get_max_col())
-        child1 = local_search(prob, sol=child1, **ls_args)
-        # print("improved mutated child: ", child1.get_max_col())
-        pop.append(child1)
+        new_gen = update_population(prob, new_gen, eval_func)
+        if new_gen[0].get_max_col() < best_score:
+            best_sol = new_gen[0].copy()
+            best_score = best_sol.get_max_col()
 
+        for i, indiv in enumerate(new_gen):
+            if rd.rand() < mut_prob:
+                print("Before mutation", indiv.get_max_col())
+                indiv = mutation(prob, indiv, local_search, ls_args)
+                print("After mutation", indiv.get_max_col())
+                indiv = local_search(prob, sol=indiv, **ls_args)
+                print("Result", indiv.get_max_col())
+                print("")
+                new_gen[i] = indiv
+
+        pop = new_gen + pop[:(pop_size - len(new_gen))]
         pop = update_population(prob, pop, eval_func)
-        pop = pop[:pop_size]
 
         if pop[0].get_max_col() < best_score:
-            best_sol = pop[0]
+            best_sol = pop[0].copy()
             best_score = best_sol.get_max_col()
 
         print("")

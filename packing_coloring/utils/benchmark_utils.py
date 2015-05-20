@@ -1,13 +1,11 @@
 import sys
 import cProfile
-from _lsprof import profiler_entry
 # import pstats
+from _lsprof import profiler_entry
 import functools
-import yappi
-from inspect import signature
-# import json
+from inspect import getcallargs
 from time import process_time
-# from packing_coloring.algorithms.solution import PackColSolution
+# import json
 
 
 class search_step_trace(object):
@@ -24,50 +22,39 @@ class search_step_trace(object):
         self.procceding = False
 
     def __call__(self, *args, **kwargs):
-        yappi.stop()
         self.__numcalls += 1
 
         self.procceding = True
         self.start_time = process_time()
-
         result = self.__f(*args, **kwargs)
-
         elapsed = process_time() - self.start_time
         self.procceding = False
 
         self.__cumulative_time += elapsed
         old_mean = self.__elapsed_time['mean']
         old_std = self.__elapsed_time['std'] * (self.__numcalls - 1)
-
         delta = (elapsed - old_mean)
+
         new_mean = (old_mean + (delta/self.__numcalls))
         new_std = old_std + ((elapsed - old_mean) * (elapsed - new_mean))
         new_std = (new_std / self.__numcalls)
         self.__elapsed_time['mean'] = new_mean
         self.__elapsed_time['std'] = new_std
 
-        yappi.start()
-
         return result
 
     def count(self):
-        if self.procceding:
-            return "error"
         return self.__numcalls
 
     def elapsed_time(self):
-        if self.procceding:
-            return "error"
         return self.__elapsed_time
 
     def cumulative_time(self):
-        if self.procceding:
-            return "error"
         return self.__cumulative_time
 
     def dump_vars(self):
         if self.procceding:
-            return "error"
+            return None
         trace = (self.count(),
                  self.elapsed_time(),
                  self.cumulative_time())
@@ -80,36 +67,33 @@ class search_step_trace(object):
 
     @staticmethod
     def set_trace(data):
-        yappi.stop()
         for func in search_step_trace.__instances.values():
             name = func.__name__
             trace = data.get(name)
             if trace is not None:
-                func.__numcalls = trace[0]
-                func.__elapsed_time['mean'] = trace[1]['mean']
-                func.__elapsed_time['std'] = trace[1]['std']
-                func.__cumulative_time = trace[2]
-        yappi.start()
+                try:
+                    func.__numcalls = trace[0]
+                    func.__elapsed_time['mean'] = trace[1]['mean']
+                    func.__elapsed_time['std'] = trace[1]['std']
+                    func.__cumulative_time = trace[2]
+                except:
+                    print(name, trace)
 
     @staticmethod
     def dump_all():
         """Return a dict of {function: # of calls}
            for all registered functions."""
-        yappi.stop()
         dump = {}
         for func, trace in search_step_trace.__instances.items():
             if trace.__numcalls > 0:
                 stat = trace.dump_vars()
                 dump[func.__name__] = stat
-        yappi.start()
         return dump
 
     @staticmethod
     def clear_all():
-        yappi.stop()
         for func, trace in search_step_trace.__instances.items():
             trace.clear_vars()
-        yappi.start()
 
     @staticmethod
     def print_format():
@@ -123,92 +107,91 @@ class search_step_trace(object):
 def set_env(func):
     @functools.wraps(func)
     def echo_func(*args, **kwargs):
-        sig = signature(func)
-        par = sig.bind(*args, **kwargs)
-        for kw, arg in par.kwargs.items():
-            if kw == 'sol' and arg.record is not None:
+        callargs = getcallargs(func, *args, **kwargs)
+        for kw, arg in callargs.items():
+            if type(arg).__name__ is "PackColSolution" and arg.record is not None:
                 search_step_trace.set_trace(arg.record)
 
         return func(*args, **kwargs)
     return echo_func
 
 
-class YProfiler(object):
-    def __init__(self, *functions):
-        self.enable_count = 0
-        self.results = {}
-        self.monitored = []
+# class YProfiler(object):
+#     def __init__(self, *functions):
+#         self.enable_count = 0
+#         self.results = {}
+#         self.monitored = []
 
-        for func in functions:
-            self.add_function(func)
+#         for func in functions:
+#             self.add_function(func)
 
-    def add_function(self, func):
-        try:
-            funcname = func.__name__
-        except AttributeError:
-            import warnings
-            warnings.warn("Could not extract the name for the object %r" %
-                          (func,))
-            return
+#     def add_function(self, func):
+#         try:
+#             funcname = func.__name__
+#         except AttributeError:
+#             import warnings
+#             warnings.warn("Could not extract the name for the object %r" %
+#                           (func,))
+#             return
 
-        if funcname not in self.monitored:
-            self.monitored.append(funcname)
+#         if funcname not in self.monitored:
+#             self.monitored.append(funcname)
 
-    def enable_by_count(self):
-        if self.enable_count == 0:
-            self.enable()
-        self.enable_count += 1
+#     def enable_by_count(self):
+#         if self.enable_count == 0:
+#             self.enable()
+#         self.enable_count += 1
 
-    def disable_by_count(self):
-        if self.enable_count > 0:
-            self.enable_count -= 1
-            if self.enable_count == 0:
-                self.disable()
+#     def disable_by_count(self):
+#         if self.enable_count > 0:
+#             self.enable_count -= 1
+#             if self.enable_count == 0:
+#                 self.disable()
 
-    def enable(self):
-        yappi.start()
+#     def enable(self):
+#         yappi.start()
 
-    def disable(self):
-        yappi.stop()
+#     def disable(self):
+#         yappi.stop()
 
-    def wrap_function(self, func):
-        try:
-            funcname = func.__name__
-        except AttributeError:
-            import warnings
-            warnings.warn("Could not extract the name for the object %r" %
-                          (func,))
-            return
-        if funcname not in self.results:
-            self.results[funcname] = {}
+#     def wrap_function(self, func):
+#         try:
+#             funcname = func.__name__
+#         except AttributeError:
+#             import warnings
+#             warnings.warn("Could not extract the name for the object %r" %
+#                           (func,))
+#             return
+#         if funcname not in self.results:
+#             self.results[funcname] = {}
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwds):
-            self.enable_by_count()
-            try:
-                result = func(*args, **kwds)
-            finally:
-                self.disable_by_count()
-                stats = yappi.get_func_stats()
-                stats.strip_dirs()
+#         @functools.wraps(func)
+#         def wrapper(*args, **kwds):
+#             self.enable_by_count()
+#             try:
+#                 result = func(*args, **kwds)
+#             finally:
+#                 self.disable_by_count()
+#                 stats = yappi.get_func_stats()
+#                 stats.strip_dirs()
 
-                final_stats = []
-                for entry in stats:
-                    for name in self.monitored:
-                        if name in entry.full_name:
-                            entry.full_name = entry.full_name.split()[-1]
-                            final_stats.append(entry)
+#                 final_stats = []
+#                 for entry in stats:
+#                     for name in self.monitored:
+#                         if name in entry.full_name:
+#                             entry.full_name = entry.full_name.split()[-1]
+#                             final_stats.append(entry)
 
-                funcname = func.__name__
-                probname = args[0].name
-                if probname not in self.results[funcname]:
-                    self.results[funcname][probname] = []
+#                 funcname = func.__name__
+#                 probname = args[0].name
+#                 if probname not in self.results[funcname]:
+#                     self.results[funcname][probname] = []
 
-                self.results[funcname][probname].append((result.get_max_col(),
-                                                        final_stats))
-                yappi.clear_stats()
-            return result
-        return wrapper
+#                 self.results[funcname][probname].append((result.get_max_col(),
+#                                                         final_stats))
+#                 yappi.clear_stats()
+#             return result
+#         return wrapper
 
 
 class CProfiler():
