@@ -5,6 +5,7 @@ import networkx as nx
 from packing_coloring.graph_generator.col_parser import parse_col
 import packing_coloring.utils.graph_utils as gu
 import numpy as np
+import numpy.random as rd
 
 
 def load_graph_file(file):
@@ -300,4 +301,54 @@ def distance_graph(steps, size):
 
     adj_mat = nx.to_numpy_matrix(gx)
     g = gu.graph_from_adj(adj_mat)
+    return g
+
+
+def cylindre_product(m, n):
+    gx1 = nx.cycle_graph(m)
+    gx2 = nx.cycle_graph(n)
+    gx = nx.cartesian_product(gx1, gx2)
+
+    print(gx.number_of_selfloops(), nx.is_connected(gx))
+    print(nx.diameter(gx), nx.radius(gx))
+    adj_mat = nx.to_numpy_matrix(gx)
+
+    g = gu.graph_from_adj(adj_mat)
+    return g
+
+
+def cylindre_path_product(m, n):
+    gx1 = nx.path_graph(m)
+    gx2 = nx.cycle_graph(n)
+    gx = nx.cartesian_product(gx1, gx2)
+
+    print(gx.number_of_selfloops(), nx.is_connected(gx))
+    print(nx.diameter(gx), nx.radius(gx))
+    adj_mat = nx.to_numpy_matrix(gx)
+
+    g = gu.graph_from_adj(adj_mat)
+    return g
+
+
+def gnm_random_graph(n, m):
+    gx = nx.gnm_random_graph(n, m)
+    print(gx.number_of_selfloops(), nx.is_connected(gx))
+    print(nx.diameter(gx), nx.radius(gx))
+    adj_mat = nx.to_numpy_matrix(gx)
+
+    g = gu.graph_from_adj(adj_mat)
+    return g
+
+
+def geometric_random_graph(size, radius):
+    points = rd.random((size, 2)) * 4
+    g, pos = gt.geometric_graph(points, radius)
+
+    l = gt.label_largest_component(g)
+    g.set_vertex_filter(l)
+    g.purge_vertices()
+    gt.graph_draw(g, pos=pos, output_size=(300, 300), output="geometric.pdf")
+
+    print(gt.pseudo_diameter(g), )
+
     return g

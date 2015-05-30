@@ -3,6 +3,7 @@
 import numpy as np
 from packing_coloring.utils.benchmark_utils import search_step_trace
 
+random_ok = True
 
 @search_step_trace
 def k_colorable_set(prob, sol, k_col):
@@ -36,7 +37,6 @@ def coloried_and_k_uncolorable_set(prob, sol, k_col):
     return k_uncolorable
 
 
-# TODO: add sumplementary sorting criterion ?
 @search_step_trace
 def partition_next_vertex(prob, sol, k_col):
     vertices = np.arange(prob.v_size)
@@ -59,8 +59,13 @@ def partition_next_vertex(prob, sol, k_col):
     gt_k_dist_score = np.sum(col_and_k_uncol_dist_mat <= k_col, axis=0).A1
     gt_k_dist_score = prob.v_size - gt_k_dist_score
 
-    # Works better on a grid, this is a kind of DSATUR for k dist
-    influence = np.lexsort((gt_unk_dist_score, gt_k_dist_score, k_dist_score))
+    if random_ok:
+        rand_order = np.random.permutation(np.arange(prob.v_size))
+        influence = np.lexsort((rand_order, gt_unk_dist_score,
+                                gt_k_dist_score, k_dist_score))
+    else:
+        influence = np.lexsort((gt_unk_dist_score,
+                                gt_k_dist_score, k_dist_score))
 
     v = influence[np.in1d(influence, vertices[k_col_set])][0]
     return v

@@ -45,6 +45,15 @@ def generate_population2(prob, size, heuristic, init_args):
     return pop
 
 
+def generate_population3(prob, size, heuristic, init_args):
+    print("Init population by RLF")
+    pop = []
+    for i in range(size):
+        indiv = heuristic(prob, random_init=False, **init_args)
+        pop.append(indiv)
+    return pop
+
+
 @search_step_trace
 def selection(pop, tournament_size=2):
     # Tournament Selection
@@ -153,9 +162,9 @@ def crossover_cover(prob, sols):
             cover_score -= np.sum(kcol_nodes)
             scores[col] = cover_score
 
-        # new_col = np.argmax(scores)
-        scores[scores == 0] = float("inf")
-        new_col = np.argmin(scores)
+        new_col = np.argmax(scores)
+        # scores[scores == 0] = float("inf")
+        # new_col = np.argmin(scores)
         new_packing = np.copy(sol_packing[new_col])
         child[new_packing] = new_col
 
@@ -280,7 +289,7 @@ def mutation(prob, sol, local_search, ls_args):
 
 
 @search_step_trace
-def update_population(prob, pop, eval_func):
+def update_population(prob, pop, eval_func, nbr_gen=None):
     print("Update")
     sum_val = []
     pcol_val = []
@@ -290,29 +299,39 @@ def update_population(prob, pop, eval_func):
     order = np.lexsort((np.array(sum_val), np.array(pcol_val)))
     print(np.array([[i, j] for i, j in zip(pcol_val, sum_val)])[order])
     pop = [pop[i] for i in order]
+
+    if nbr_gen is not None:
+        tracefname = "hybrid_algorithm.qst"
+        with open(tracefname, 'a') as f:
+            for indiv in pop:
+                print(prob.name, ", ", indiv.get_max_col(), ", ",
+                      nbr_gen, file=f, sep="")
     return pop
 
 
-def hybrid_algorithm(prob, pop_size, nbr_gen, pool_nbr, replace_rate, mut_prob,
+def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate, mut_prob,
                      local_search, ls_args, init_heur, init_args, eval_func):
-    pop = generate_population2(prob, pop_size, init_heur, init_args)
+    pop = generate_population3(prob, pop_size, init_heur, init_args)
     # for i, indiv in enumerate(pop):
     #     pop[i] = local_search(prob, sol=indiv, **ls_args)
         # print("individu #", i, "'s quality:", pop[i].get_max_col())
 
-    pop = update_population(prob, pop, eval_func)
+    pop = update_population(prob, pop, eval_func, 0)
 
     best_sol = pop[0]
     best_score = best_sol.get_max_col()
+    search_step_trace.print_trace(prob, best_sol)
 
     new_gen_size = np.ceil(pop_size * replace_rate)
-    for i in range(nbr_gen):
-        print("############### generation", i, "################")
+    for gen in range(nbr_gen):
+        print("############### generation", gen, "################")
         new_gen = []
         while len(new_gen) < new_gen_size:
-            parents = choose_parents(pop, 2, pool_nbr)
+            parents = choose_parents(pop, 2, pool_size)
             print("Parents: (", parents[0].get_max_col(), ", ", parents[1].get_max_col(),")", sep="")
             child = crossover_area(prob, parents)
+            # child = crossover_area(prob, parents)
+            # child = crossover_cover(prob, parents)
             print("Resulting child", child.get_max_col(), end="")
             child = local_search(prob, sol=child, **ls_args)
             print(" ->", child.get_max_col())
@@ -322,6 +341,7 @@ def hybrid_algorithm(prob, pop_size, nbr_gen, pool_nbr, replace_rate, mut_prob,
         if new_gen[0].get_max_col() < best_score:
             best_sol = new_gen[0].copy()
             best_score = best_sol.get_max_col()
+            search_step_trace.print_trace(prob, best_sol)
 
         for i, indiv in enumerate(new_gen):
             if rd.rand() < mut_prob:
@@ -334,11 +354,12 @@ def hybrid_algorithm(prob, pop_size, nbr_gen, pool_nbr, replace_rate, mut_prob,
                 new_gen[i] = indiv
 
         pop = new_gen + pop[:(pop_size - len(new_gen))]
-        pop = update_population(prob, pop, eval_func)
+        pop = update_population(prob, pop, eval_func, gen+1)
 
         if pop[0].get_max_col() < best_score:
             best_sol = pop[0].copy()
             best_score = best_sol.get_max_col()
+            search_step_trace.print_trace(prob, best_sol)
 
         print("")
 

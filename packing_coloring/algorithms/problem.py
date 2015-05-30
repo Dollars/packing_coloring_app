@@ -43,7 +43,7 @@ class GraphProblem:
         self._closeness_values = None
         self._betweenness_values = None
         self._avg_kdegree = None
-        self.name = "{0}-{1}".format(self.v_size, np.sum(self.dist_matrix == 1))
+        self.name = "{0}-{1}".format(self.v_size, int(np.sum(self.dist_matrix == 1) / 2))
 
     def get_diam(self):
         return self.diam

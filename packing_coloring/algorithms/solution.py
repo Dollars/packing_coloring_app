@@ -12,13 +12,11 @@ class PackColSolution:
         else:
             self.pack_col = np.zeros(g_prob.v_size, dtype=int)
             self.v_size = g_prob.v_size
-        self.record = None
 
     def copy(self):
         pcol = PackColSolution()
         pcol.pack_col = self.pack_col.copy()
         pcol.v_size = self.v_size
-        pcol.record = self.record
         return pcol
 
     def uncolored(self):
@@ -184,7 +182,3 @@ class PackColSolution:
 
     def __str__(self):
         return str(self.pack_col)
-
-    def get_trace(self):
-        stats = search_step_trace.dump_all()
-        self.record = stats

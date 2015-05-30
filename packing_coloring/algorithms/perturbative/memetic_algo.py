@@ -11,6 +11,7 @@ from packing_coloring.algorithms.constructive.greedy_algo import greedy_algorith
 
 
 def generate_population(prob, size, heuristic, init_args):
+    print("Init population by permut")
     pop = []
     indiv = heuristic(prob, random_init=False, **init_args)
     permut = np.arange(1, indiv.get_max_col()+1, dtype=int)
@@ -25,6 +26,7 @@ def generate_population(prob, size, heuristic, init_args):
 
 
 def generate_population2(prob, size, heuristic, init_args):
+    print("Init population by random order")
     pop = []
     for i in range(size):
         # print("init candidate #", i, flush=True)
@@ -33,29 +35,44 @@ def generate_population2(prob, size, heuristic, init_args):
     return pop
 
 
-def selection(pop, tournament_size=2):
+def generate_population3(prob, size, heuristic, init_args):
+    print("Init population by RLF")
+    pop = []
+    for i in range(size):
+        indiv = heuristic(prob, random_init=False, **init_args)
+        pop.append(indiv)
+    return pop
+
+
+def selection(pop, pool_size=2):
     # Tournament Selection
+    print("Tournament ", end="")
     indices = np.arange(len(pop), dtype=int)
     best = rd.choice(indices, 1)[0]
 
-    for i in range(tournament_size):
+    for i in range(pool_size):
         adv = rd.choice(np.delete(indices, best), 1)[0]
         if pop[adv] < pop[best]:
             best = adv
+    print(best)
     return pop[best]
 
 
-def choose_parents(pop, nbr, tournament_size):
+def choose_parents(pop, nbr, pool_size):
+    print("Parents selection")
     pop_indices = np.arange(len(pop), dtype=int)
     parents_i = []
     for i in range(min(nbr, len(pop))):
-        pi = selection(np.delete(pop_indices, parents_i), tournament_size)
+        pi = selection(np.delete(pop_indices, parents_i), pool_size)
         parents_i.append(pi)
     parents = [pop[i] for i in parents_i]
+    print("Parents: (", end="")
+    print(*[pop[i].get_max_col() for i in parents_i], sep=", ", end=")\n")
     return parents
 
 
 def crossover(prob, sols, k_col, local_search, ls_args):
+    print("Crossover pillars")
     if len(sols) < 2:
         print("Not enough parents!")
         return None
@@ -64,12 +81,13 @@ def crossover(prob, sols, k_col, local_search, ls_args):
     for p in sols[1:]:
         common_base[common_base[:] != p[:]] = 0
     common_base[common_base[:] >= k_col] = 0
-
+    print("percent of pillars:", np.sum(common_base[:] != 0)/prob.v_size)
     child = local_search(prob, sol=common_base, start_col=k_col, **ls_args)
     return child
 
 
 def update_population(prob, pop, eval_func):
+    print("Update")
     sum_val = []
     pcol_val = []
     for s in pop:
@@ -81,19 +99,21 @@ def update_population(prob, pop, eval_func):
     return pop
 
 
-def memetic_algorithm(prob, pop_size, nbr_generation, tournament_size, p_nbr,
+def memetic_algorithm(prob, pop_size, nbr_gen, pool_size, p_nbr,
                       local_search, ls_args, init_heur, init_args, eval_func):
 
-    pop = generate_population(prob, pop_size, init_heur, init_args)
-    pop = update_population(prob, pop, eval_func)
+    pop = generate_population3(prob, pop_size, init_heur, init_args)
     # for i, indiv in enumerate(pop):
+    #     pop[i] = local_search(prob, sol=indiv, **ls_args)
     #     print("individu #", i, "'s quality:", indiv.get_max_col())
+    pop = update_population(prob, pop, eval_func)
 
     best_sol = pop[0]
     best_score = best_sol.get_max_col()
-    for i in range(nbr_generation):
+    for i in range(nbr_gen):
+        print("############### generation", i, "################")
         # print("generation #", i)
-        parents = choose_parents(pop, p_nbr, tournament_size)
+        parents = choose_parents(pop, p_nbr, pool_size)
         child = crossover(prob, parents, best_sol.get_max_col()-1,
                           local_search, ls_args)
         pop.append(child)

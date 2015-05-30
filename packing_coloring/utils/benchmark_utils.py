@@ -1,16 +1,16 @@
-import sys
-import cProfile
-# import pstats
-from _lsprof import profiler_entry
 import functools
 from inspect import getcallargs
 from time import process_time
-# import json
+import shortuuid as sid
+
+enabled = False
 
 
-class search_step_trace(object):
+class function_trace(object):
 
     __instances = {}
+    env_name = "default"
+    __id = sid.ShortUUID().random(length=10)
 
     def __init__(self, f):
         self.__f = f
@@ -18,7 +18,7 @@ class search_step_trace(object):
         self.__numcalls = 0
         self.__elapsed_time = {'mean': 0.0, 'std': 0.0}
         self.__cumulative_time = 0.0
-        search_step_trace.__instances[f] = self
+        function_trace.__instances[f] = self
         self.procceding = False
 
     def __call__(self, *args, **kwargs):
@@ -53,8 +53,6 @@ class search_step_trace(object):
         return self.__cumulative_time
 
     def dump_vars(self):
-        if self.procceding:
-            return None
         trace = (self.count(),
                  self.elapsed_time(),
                  self.cumulative_time())
@@ -67,7 +65,7 @@ class search_step_trace(object):
 
     @staticmethod
     def set_trace(data):
-        for func in search_step_trace.__instances.values():
+        for func in function_trace.__instances.values():
             name = func.__name__
             trace = data.get(name)
             if trace is not None:
@@ -84,16 +82,23 @@ class search_step_trace(object):
         """Return a dict of {function: # of calls}
            for all registered functions."""
         dump = {}
-        for func, trace in search_step_trace.__instances.items():
+        for func, trace in function_trace.__instances.items():
             if trace.__numcalls > 0:
                 stat = trace.dump_vars()
                 dump[func.__name__] = stat
         return dump
 
     @staticmethod
-    def clear_all():
-        for func, trace in search_step_trace.__instances.items():
+    def clear_func(func):
+        trace = function_trace.__instances.get(func)
+        if trace is not None:
             trace.clear_vars()
+
+    @staticmethod
+    def clear_all():
+        for func, trace in function_trace.__instances.items():
+            trace.clear_vars()
+        function_trace.__id = sid.ShortUUID().random(length=10)
 
     @staticmethod
     def print_format():
@@ -103,6 +108,21 @@ class search_step_trace(object):
     def csv_format():
         return '{0}, {1[0]:d}, {1[1][mean]:f}, {1[1][std]:f}, {1[2]:f}'
 
+    @staticmethod
+    def print_trace(prob, sol):
+        if enabled:
+            env_name = function_trace.env_name
+            tracefname = "{0}.qst".format(env_name)
+            with open(tracefname, 'a') as f:
+                trace = function_trace.dump_all()
+                for name, data in trace.items():
+                    if data is not None:
+                        print(prob.name, ", ", sol.get_max_col(), ", ",
+                              function_trace.__id, ", ",
+                              function_trace.csv_format().format(name, data),
+                              file=f, sep="")
+                print("", file=f)
+
 
 def set_env(func):
     @functools.wraps(func)
@@ -110,232 +130,15 @@ def set_env(func):
         callargs = getcallargs(func, *args, **kwargs)
         for kw, arg in callargs.items():
             if type(arg).__name__ is "PackColSolution" and arg.record is not None:
-                search_step_trace.set_trace(arg.record)
+                function_trace.set_trace(arg.record)
 
         return func(*args, **kwargs)
     return echo_func
 
 
-# class YProfiler(object):
-#     def __init__(self, *functions):
-#         self.enable_count = 0
-#         self.results = {}
-#         self.monitored = []
-
-#         for func in functions:
-#             self.add_function(func)
-
-#     def add_function(self, func):
-#         try:
-#             funcname = func.__name__
-#         except AttributeError:
-#             import warnings
-#             warnings.warn("Could not extract the name for the object %r" %
-#                           (func,))
-#             return
-
-#         if funcname not in self.monitored:
-#             self.monitored.append(funcname)
-
-#     def enable_by_count(self):
-#         if self.enable_count == 0:
-#             self.enable()
-#         self.enable_count += 1
-
-#     def disable_by_count(self):
-#         if self.enable_count > 0:
-#             self.enable_count -= 1
-#             if self.enable_count == 0:
-#                 self.disable()
-
-#     def enable(self):
-#         yappi.start()
-
-#     def disable(self):
-#         yappi.stop()
-
-#     def wrap_function(self, func):
-#         try:
-#             funcname = func.__name__
-#         except AttributeError:
-#             import warnings
-#             warnings.warn("Could not extract the name for the object %r" %
-#                           (func,))
-#             return
-#         if funcname not in self.results:
-#             self.results[funcname] = {}
-
-#         @functools.wraps(func)
-#         def wrapper(*args, **kwds):
-#             self.enable_by_count()
-#             try:
-#                 result = func(*args, **kwds)
-#             finally:
-#                 self.disable_by_count()
-#                 stats = yappi.get_func_stats()
-#                 stats.strip_dirs()
-
-#                 final_stats = []
-#                 for entry in stats:
-#                     for name in self.monitored:
-#                         if name in entry.full_name:
-#                             entry.full_name = entry.full_name.split()[-1]
-#                             final_stats.append(entry)
-
-#                 funcname = func.__name__
-#                 probname = args[0].name
-#                 if probname not in self.results[funcname]:
-#                     self.results[funcname][probname] = []
-
-#                 self.results[funcname][probname].append((result.get_max_col(),
-#                                                         final_stats))
-#                 yappi.clear_stats()
-#             return result
-#         return wrapper
-
-
-class CProfiler():
-    def __init__(self, *functions):
-        self.enable_count = 0
-        self.results = {}
-        self.monitored = {}
-
-        for func in functions:
-            self.add_function(func)
-
-        self.profiler = cProfile.Profile()
-
-    def add_function(self, func):
-        try:
-            code = func.__code__
-            funcname = func.__name__
-        except AttributeError:
-            import warnings
-            warnings.warn("Could not extract the name for the object %r" %
-                          (func,))
-            return
-
-        if funcname not in self.results:
-            self.results[funcname] = {}
-
-        if code not in self.monitored:
-            self.monitored[code] = {}
-
-    def enable_by_count(self):
-        if self.enable_count == 0:
-            self.enable()
-        self.enable_count += 1
-
-    def disable_by_count(self):
-        if self.enable_count > 0:
-            self.enable_count -= 1
-            if self.enable_count == 0:
-                self.disable()
-
-    def enable(self):
-        self.profiler.enable()
-
-    def disable(self):
-        self.profiler.disable()
-
-    def wrap_function(self, func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwds):
-            self.enable_by_count()
-            try:
-                result = self.profiler.runcall(func, *args, **kwds)
-            finally:
-                self.disable_by_count()
-                self.profiler.create_stats()
-                stats = self.profiler.getstats()
-
-                final_stats = []
-                for entry in stats:
-                    if entry[0] in self.monitored:
-                        final_stats.append(entry)
-
-                funcname = func.__name__
-                probname = args[0].name
-                if probname not in self.results[funcname]:
-                    self.results[funcname][probname] = []
-
-                self.results[funcname][probname].append((result.get_max_col(),
-                                                        final_stats))
-                self.profiler.clear()
-            return result
-        return wrapper
-
-
-class Stats(object):
-    def __init__(self, data):
-        self.data = data
-
-    def sort(self, crit="inlinetime"):
-        if crit not in profiler_entry.__dict__:
-            raise(ValueError, "Can't sort by %s" % crit)
-        self.data.sort(lambda b, a: (getattr(a, crit) <
-                                     getattr(b, crit)))
-        for e in self.data:
-            if e.calls:
-                e.calls.sort(lambda b, a: (getattr(a, crit) <
-                                           getattr(b, crit)))
-
-    def pprint(self, top=None, file=None):
-        """XXX docstring"""
-        if file is None:
-            file = sys.stdout
-        d = self.data
-        if top is not None:
-            d = d[:top]
-        cols = "% 12s %12s %11.4f %11.4f   %s\n"
-        hcols = "% 12s %12s %12s %12s %s\n"
-        # cols2 = "+%12s %12s %11.4f %11.4f +  %s\n"
-        file.write(hcols % ("CallCount", "Recursive", "Total(ms)",
-                            "Inline(ms)", "module:lineno(function)"))
-        for e in d:
-            file.write(cols % (e.callcount, e.reccallcount, e.totaltime,
-                               e.inlinetime, label(e.code)))
-            if e.calls:
-                for se in e.calls:
-                    file.write(cols % ("+%s" % se.callcount, se.reccallcount,
-                                       se.totaltime, se.inlinetime,
-                                       "+%s" % label(se.code)))
-
-    def freeze(self):
-        """Replace all references to code objects with string
-        descriptions; this makes it possible to pickle the instance."""
-
-        # this code is probably rather ickier than it needs to be!
-        for i in range(len(self.data)):
-            e = self.data[i]
-            if not isinstance(e.code, str):
-                self.data[i] = type(e)((label(e.code),) + e[1:])
-            if e.calls:
-                for j in range(len(e.calls)):
-                    se = e.calls[j]
-                    if not isinstance(se.code, str):
-                        e.calls[j] = type(se)((label(se.code),) + se[1:])
-
-_fn2mod = {}
-
-
-def label(code):
-    if isinstance(code, str):
-        return code
-    try:
-        mname = _fn2mod[code.co_filename]
-    except KeyError:
-        for k, v in sys.modules.items():
-            if v is None:
-                continue
-            if not hasattr(v, '__file__'):
-                continue
-            if not isinstance(v.__file__, str):
-                continue
-            if v.__file__.startswith(code.co_filename):
-                mname = _fn2mod[code.co_filename] = k
-                break
+class search_step_trace(function_trace):
+    def __new__(cls, f):
+        if enabled:
+            return function_trace(f)
         else:
-            mname = _fn2mod[code.co_filename] = '<%s>' % code.co_filename
-
-    return '%s:%d(%s)' % (mname, code.co_firstlineno, code.co_name)
+            return f

@@ -8,10 +8,9 @@ from packing_coloring.algorithms.search_space.complete_illegal_col import *
 from packing_coloring.algorithms.search_space.partial_valide_col import *
 from packing_coloring.algorithms.solution import *
 from packing_coloring.algorithms.constructive.rlf_algo import rlf_algorithm
-from packing_coloring.utils.benchmark_utils import set_env, search_step_trace
+from packing_coloring.utils.benchmark_utils import search_step_trace
 
 
-@search_step_trace
 def update_fitness(prob, sol, fitness, colors, vertex, col):
     vertices = np.arange(prob.v_size)
     prev_col = sol[vertex]
@@ -40,7 +39,6 @@ def update_fitness(prob, sol, fitness, colors, vertex, col):
     return fitness
 
 
-@search_step_trace
 def init_fitness(prob, sol, colors):
     vertices = np.arange(prob.v_size)
     fitness = np.zeros((prob.v_size, len(colors)), dtype=int)
@@ -57,8 +55,9 @@ def init_fitness(prob, sol, colors):
     return fitness
 
 
-@set_env
-def tabu_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
+@search_step_trace
+def tabu_kpack_col(prob, k_col, sol=None, tt_a=10,
+                   tt_d=0.5, max_iter=1000, count_max=10):
     colors = np.arange(1, k_col+1)
     tabu_list = np.zeros((prob.v_size, k_col), dtype=int)
 
@@ -69,12 +68,12 @@ def tabu_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
     else:
         sol[sol > prob.get_diam()] = rd.randint(
             1, k_col+1, len(sol[sol > prob.get_diam()]))
+    best_sol = sol.copy()
 
     fitness = init_fitness(prob, sol, colors)
-    score = count_conflicting_edge(prob, sol)
-    best_score = score
-    best_sol = sol.copy()
-    while score > 0 and max_iter > 0:
+    best_score = score = count_conflicting_edge(prob, sol)
+    count_iter = count_slope = 0
+    while score > 0 and count_iter < max_iter:
         vertex, col = best_one_exchange(prob, sol, fitness, score,
                                         best_score, colors, tabu_list)
         prev_col = sol[vertex]
@@ -83,50 +82,60 @@ def tabu_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.5, max_iter=1000):
             print("tabue tenure too high")
             break
 
+        prev_score = score
         score += fitness[vertex, col-1]
         fitness = update_fitness(prob, sol, fitness, colors, vertex, col)
         sol[vertex] = col
 
+        if score == prev_score:
+            count_slope += 1
+        else:
+            count_slope = 0
+
         tabu_list = tabu_list - 1
         tabu_list[tabu_list < 0] = 0
-        tabu_list[vertex, prev_col-1] = (
-            rd.randint(tt_a) + (2 * tt_d * score * prev_col))
+        tabu_list[vertex, prev_col-1] = (rd.randint(tt_a) +
+                                         (2 * tt_d * score * col) +
+                                         np.ceil(float(count_slope)/count_max))
 
         if score < best_score:
             best_score = score
             best_sol = sol.copy()
 
-        max_iter -= 1
+        count_iter += 1
 
     return best_sol
 
 
-def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5, max_iter=1000, duration=30):
+def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5,
+                  max_iter=1000, count_max=10, duration=30):
     end_time = time.time()+(duration*60)
 
     if sol is None:
         sol = rlf_algorithm(prob)
-    lim_col = sol.get_max_col()
     best_sol = sol.copy()
-    new_sol = sol.copy()
 
+    k_lim = sol.get_max_col()
+    k_col = k_lim - 1
     count = 0
-    k_col = lim_col - 1
-    k_lim = lim_col
     while count < k_count:
-        print(k_col)
-        new_sol = tabu_kpack_col(prob, k_col, new_sol, tt_a, tt_d, max_iter)
-        new_score = count_conflicting_edge(prob, new_sol)
+        print(k_col, k_lim)
+        sol = tabu_kpack_col(prob, k_col, sol,
+                             tt_a, tt_d, max_iter, count_max)
+        new_score = count_conflicting_edge(prob, sol)
+        max_col = sol.get_max_col()
+        if max_col >= k_lim:
+            count += 1
         if new_score == 0:
-            k_lim = k_col
-            k_col = k_col - 1
-            if new_sol.get_max_col() < best_sol.get_max_col():
+            if max_col < best_sol.get_max_col():
                 count = 0
-                best_sol = new_sol.copy()
+                k_lim = k_col
+                best_sol = sol.copy()
+                search_step_trace.print_trace(prob, best_sol)
+
+            k_col = max_col - 1
         else:
-            k_col = k_col + 1
-            if k_col >= k_lim:
-                count += 1
+            k_col = max_col + 1
 
         if time.time() >= end_time:
             print("time stop!")
@@ -170,10 +179,10 @@ def prepare_sol(prob, k_col, max_iter, sol=None):
     return sol, tabu_list
 
 
-@set_env
+@search_step_trace
 def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
                       max_iter=1000, count_max=10):
-    if k_col >= sol.get_max_col():
+    if k_col >= sol.get_max_col() and sol.count_uncolored() == 0:
         k_col = sol.get_max_col() - 1
     sol, tabu_list = prepare_sol(prob, k_col, max_iter, sol)
     colors = np.arange(1, k_col+1)
@@ -185,7 +194,7 @@ def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
         print("no challenge men!", k_col - sol.get_max_col())
 
     count_iter = count_slope = 0
-    while score > 0 and  count_iter <= max_iter:
+    while score > 0 and count_iter <= max_iter:
         vertex, col, conflicts = best_i_swap(prob, sol, best_score,
                                              colors, tabu_list)
         if vertex == -1:
@@ -203,13 +212,13 @@ def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
         if score < best_score:
             best_score = score
             best_sol = sol.copy()
-            best_sol.get_trace()
 
         tabu_list = tabu_list - 1
         tabu_list[tabu_list < 0] = 0
-        tabue_tenure = (rd.randint(tt_a) + (2 * tt_d * score * col) +
-                        np.ceil(float(count_slope)/count_max))
-        tabu_list[conflicts, col-1] = tabue_tenure
+        for v in np.arange(prob.v_size)[conflicts]:
+            tabue_tenure = (rd.randint(tt_a) + (2 * tt_d * score * col) +
+                            np.ceil(float(count_slope)/count_max))
+            tabu_list[v, col-1] = tabue_tenure
 
         count_iter += 1
 
@@ -235,6 +244,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
+        # print(k_col, k_lim)
         sol = partial_kpack_col(prob, k_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
                                 max_iter=max_iter, count_max=count_max)
 
@@ -242,11 +252,12 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
         if max_col >= k_lim:
             count += 1
         if max_col <= k_col:
-            k_col = max_col - 1
             if max_col < best_sol.get_max_col():
                 count = 0
                 k_lim = k_col
                 best_sol = sol.copy()
+                search_step_trace.print_trace(prob, best_sol)
+            k_col = max_col - 1
 
         if time.time() >= end_time:
             break
@@ -254,11 +265,11 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
     return best_sol
 
 
-@set_env
+@search_step_trace
 def react_partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
                             max_iter=1000, iter_period=100, tenure_inc=5):
 
-    if k_col >= sol.get_max_col():
+    if k_col >= sol.get_max_col() and sol.count_uncolored() == 0:
         k_col = sol.get_max_col() - 1
     sol, tabu_list = prepare_sol(prob, k_col, max_iter, sol)
     colors = np.arange(1, k_col+1)
@@ -299,12 +310,12 @@ def react_partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
         if score < best_score:
             best_score = score
             best_sol = sol.copy()
-            best_sol.get_trace()
 
         tabu_list = tabu_list - 1
         tabu_list[tabu_list < 0] = 0
-        tabue_tenure = (rd.randint(tt) + (tt_d * score * col))
-        tabu_list[conflicts, col-1] = tabue_tenure
+        for v in np.arange(prob.v_size)[conflicts]:
+            tabue_tenure = rd.randint(tt) + (2 * tt_d * score * col)
+            tabu_list[v, col-1] = tabue_tenure
 
         iter_count += 1
 
@@ -337,16 +348,15 @@ def react_partial_pack_col(prob, k_count=3, sol=None, start_col=None, tt_a=10,
             prob, k_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
             max_iter=max_iter, iter_period=iter_period, tenure_inc=tenure_inc)
         max_col = sol.get_max_col()
+        if max_col >= k_lim:
+            count += 1
         if max_col <= k_col:
-            k_lim = k_col
-            k_col = max_col - 1
             if max_col < best_sol.get_max_col():
                 count = 0
+                k_lim = k_col
                 best_sol = sol.copy()
-        else:
-            k_col = k_col + 1
-            if k_col >= k_lim:
-                count += 1
+                search_step_trace.print_trace(prob, best_sol)
+            k_col = max_col - 1
 
         if time.time() >= end_time:
             break

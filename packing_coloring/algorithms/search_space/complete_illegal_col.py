@@ -36,10 +36,15 @@ def count_conflicting_edge(prob, sol):
 
 
 @search_step_trace
+def one_exchange(prob, sol):
+    pass
+
+
+@search_step_trace
 def best_one_exchange(prob, sol, fitness, score,
                       the_best_score, colors, tabu_list):
     vertices = np.arange(prob.v_size)
-
+    cur_sum = sol.get_sum()
     best_sum = float("inf")
     best_score = float("inf")
     changed_v = -1
@@ -50,12 +55,14 @@ def best_one_exchange(prob, sol, fitness, score,
         for col in colors:
             if col == v_col:
                 continue
-            new_sol = sol.copy()
-            new_sol[v] = col
             new_score = score + fitness[v, col-1]
-            new_sum = new_sol.get_sum()
+            new_sum = cur_sum - v_col + col
+
+            # Only used for benchmark as a counter
+            one_exchange(prob, sol)
+
             if new_score < best_score or (
-                    new_score == best_score and new_sum > best_sum):
+                    new_score == best_score and new_sum < best_sum):
                 if tabu_list[v, col-1] == 0:
                     best_score = new_score
                     best_sum = new_sum
