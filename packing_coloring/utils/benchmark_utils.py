@@ -1,15 +1,16 @@
 import functools
 from inspect import getcallargs
 from time import process_time
+from os import path
 import shortuuid as sid
 
-enabled = False
 
+class search_step_trace(object):
 
-class function_trace(object):
-
+    enabled = False
     __instances = {}
     env_name = "default"
+    dir_path = ""
     __id = sid.ShortUUID().random(length=10)
 
     def __init__(self, f):
@@ -18,30 +19,33 @@ class function_trace(object):
         self.__numcalls = 0
         self.__elapsed_time = {'mean': 0.0, 'std': 0.0}
         self.__cumulative_time = 0.0
-        function_trace.__instances[f] = self
+        search_step_trace.__instances[f] = self
         self.procceding = False
 
     def __call__(self, *args, **kwargs):
-        self.__numcalls += 1
+        if search_step_trace.enabled:
+            self.__numcalls += 1
 
-        self.procceding = True
-        self.start_time = process_time()
-        result = self.__f(*args, **kwargs)
-        elapsed = process_time() - self.start_time
-        self.procceding = False
+            self.procceding = True
+            self.start_time = process_time()
+            result = self.__f(*args, **kwargs)
+            elapsed = process_time() - self.start_time
+            self.procceding = False
 
-        self.__cumulative_time += elapsed
-        old_mean = self.__elapsed_time['mean']
-        old_std = self.__elapsed_time['std'] * (self.__numcalls - 1)
-        delta = (elapsed - old_mean)
+            self.__cumulative_time += elapsed
+            old_mean = self.__elapsed_time['mean']
+            old_std = self.__elapsed_time['std'] * (self.__numcalls - 1)
+            delta = (elapsed - old_mean)
 
-        new_mean = (old_mean + (delta/self.__numcalls))
-        new_std = old_std + ((elapsed - old_mean) * (elapsed - new_mean))
-        new_std = (new_std / self.__numcalls)
-        self.__elapsed_time['mean'] = new_mean
-        self.__elapsed_time['std'] = new_std
+            new_mean = (old_mean + (delta/self.__numcalls))
+            new_std = old_std + ((elapsed - old_mean) * (elapsed - new_mean))
+            new_std = (new_std / self.__numcalls)
+            self.__elapsed_time['mean'] = new_mean
+            self.__elapsed_time['std'] = new_std
 
-        return result
+            return result
+        else:
+            return self.__f(*args, **kwargs)
 
     def count(self):
         return self.__numcalls
@@ -65,7 +69,7 @@ class function_trace(object):
 
     @staticmethod
     def set_trace(data):
-        for func in function_trace.__instances.values():
+        for func in search_step_trace.__instances.values():
             name = func.__name__
             trace = data.get(name)
             if trace is not None:
@@ -82,7 +86,7 @@ class function_trace(object):
         """Return a dict of {function: # of calls}
            for all registered functions."""
         dump = {}
-        for func, trace in function_trace.__instances.items():
+        for func, trace in search_step_trace.__instances.items():
             if trace.__numcalls > 0:
                 stat = trace.dump_vars()
                 dump[func.__name__] = stat
@@ -90,15 +94,17 @@ class function_trace(object):
 
     @staticmethod
     def clear_func(func):
-        trace = function_trace.__instances.get(func)
-        if trace is not None:
-            trace.clear_vars()
+        if search_step_trace.enabled:
+            trace = search_step_trace.__instances.get(func)
+            if trace is not None:
+                trace.clear_vars()
 
     @staticmethod
     def clear_all():
-        for func, trace in function_trace.__instances.items():
-            trace.clear_vars()
-        function_trace.__id = sid.ShortUUID().random(length=10)
+        if search_step_trace.enabled:
+            for func, trace in search_step_trace.__instances.items():
+                trace.clear_vars()
+            search_step_trace.__id = sid.ShortUUID().random(length=10)
 
     @staticmethod
     def print_format():
@@ -110,16 +116,17 @@ class function_trace(object):
 
     @staticmethod
     def print_trace(prob, sol):
-        if enabled:
-            env_name = function_trace.env_name
-            tracefname = "{0}.qst".format(env_name)
+        if search_step_trace.enabled:
+            env_name = search_step_trace.env_name
+            dir_name = path.abspath(search_step_trace.dir_path)
+            tracefname = "{0}/{1}.qst".format(dir_name, env_name)
             with open(tracefname, 'a') as f:
-                trace = function_trace.dump_all()
+                trace = search_step_trace.dump_all()
                 for name, data in trace.items():
                     if data is not None:
                         print(prob.name, ", ", sol.get_max_col(), ", ",
-                              function_trace.__id, ", ",
-                              function_trace.csv_format().format(name, data),
+                              search_step_trace.__id, ", ",
+                              search_step_trace.csv_format().format(name, data),
                               file=f, sep="")
                 print("", file=f)
 
@@ -130,15 +137,19 @@ def set_env(func):
         callargs = getcallargs(func, *args, **kwargs)
         for kw, arg in callargs.items():
             if type(arg).__name__ is "PackColSolution" and arg.record is not None:
-                function_trace.set_trace(arg.record)
+                search_step_trace.set_trace(arg.record)
 
         return func(*args, **kwargs)
     return echo_func
 
 
-class search_step_trace(function_trace):
-    def __new__(cls, f):
-        if enabled:
-            return function_trace(f)
-        else:
-            return f
+# class conditional_decorator(object):
+#     def __init__(self, dec, condition):
+#         self.decorator = dec
+#         self.condition = condition
+
+#     def __call__(self, func):
+#         if not self.condition:
+#             # Return the function unchanged, not decorated.
+#             return func
+#         return self.decorator(func)
