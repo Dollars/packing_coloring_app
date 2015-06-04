@@ -40,7 +40,7 @@ debugLevel <- 1
 ## Previously saved log file to recover the execution of irace, either
 ## absolute path or relative to the current directory. If empty or
 ## NULL, recovery is not performed.
-recoveryFile <- "recover.backup"
+# recoveryFile <- "recover.backup"
 
 ## END of configuration file
 ############################################################################

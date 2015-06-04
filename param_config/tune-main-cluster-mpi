@@ -1,11 +1,8 @@
-#!/bin/bash
+#!/bin/bash -l
 # This is a version of tune-main for launching irace using the --mpi
 # option in a SGE Cluster.
 set -e
 set -o pipefail
-
-module load graph-tool/2.2.42-foss-2015a-Python-2.7.9
-module load R/2.15.2
 
 if [ $# == 0 ]; then
     echo "Usage: ./tune-main-cluster-mpi <BINDIR> <EXECDIR> --parallel <NB_SLAVES> additional_args_to_irace"
