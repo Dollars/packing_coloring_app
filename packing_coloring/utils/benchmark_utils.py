@@ -4,7 +4,7 @@ from inspect import getcallargs
 try:
     from time import process_time
 except ImportError:
-    import time.clock as process_time
+    from time import clock as process_time
 
 from os import path
 import shortuuid as sid
