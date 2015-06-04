@@ -24,7 +24,23 @@ digits <- 2
 
 ## A value of 0 silences all debug messages. Higher values provide
 ## more verbose debug messages.
-debugLevel <- 2
+debugLevel <- 1
+
+## Number of calls to hookRun to execute in parallel. Less than 2
+# means calls to hookRun are sequentially executed.
+# parallel <- 10
+
+## Enable/disable MPI. Use MPI to execute hookRun in parallel
+## (parameter parallel is the number of slaves).
+# mpi <- 0
+
+## Confidence level for the elimination test.
+# confidence <- 0.95
+
+## Previously saved log file to recover the execution of irace, either
+## absolute path or relative to the current directory. If empty or
+## NULL, recovery is not performed.
+recoveryFile <- "recover.backup"
 
 ## END of configuration file
 ############################################################################
