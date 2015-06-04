@@ -1,3 +1,4 @@
+from __future__ import print_function
 import functools
 from inspect import getcallargs
 from time import process_time

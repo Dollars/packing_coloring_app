@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import graph_tool.all as gt
 import numpy as np
 import sys
@@ -39,6 +40,8 @@ if __name__ == "__main__":
                         type=int, default=None)
     parser.add_argument('--enable_trace', dest='enable_trace',
                         action="store_true")
+    parser.add_argument('--print_sol', dest='print_sol',
+                        action="store_true")
     parser.add_argument('--trace_path', dest='trace_path',
                         type=str, default='')
     parser.add_argument('--rand_init', dest='rand_init',
@@ -70,3 +73,9 @@ if __name__ == "__main__":
 
     sol = benchmark_function(g, partial_pack_col, **kwargs)
     print(sol.get_max_col())
+
+    if args.print_sol:
+        solfname = "{0}_{1}.pcol".format(prob.name, best_sol.get_max_col())
+        with open(solfname, 'a') as f:
+            print(best_sol, file=f)
+            print("", file=f)
