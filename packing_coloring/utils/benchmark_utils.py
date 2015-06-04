@@ -1,7 +1,11 @@
 from __future__ import print_function
 import functools
 from inspect import getcallargs
-from time import process_time
+try:
+    from time import process_time
+except ImportError:
+    import time.clock as process_time
+
 from os import path
 import shortuuid as sid
 
