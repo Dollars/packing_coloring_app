@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #PBS -l walltime=24:00:00
-#PBS -l nodes=4:ppn=8
+#PBS -l nodes=21
 #PBS -l mem=60gb
 #PBS -m bae
 #PBS -o $EXECDIR/irace-partial.stdout 
