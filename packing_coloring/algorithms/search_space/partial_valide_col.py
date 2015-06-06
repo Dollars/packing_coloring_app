@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 import numpy as np
 from packing_coloring.utils.benchmark_utils import search_step_trace

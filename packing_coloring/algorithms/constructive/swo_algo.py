@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 import numpy as np
 import numpy.random as rd
 
-from packing_coloring.algorithms.solution import *
-from packing_coloring.algorithms.constructive.neighborhood.random import *
-from packing_coloring.algorithms.constructive.neighborhood.closeness import *
-from packing_coloring.algorithms.constructive.neighborhood.betweenness import *
-from packing_coloring.algorithms.constructive.greedy_algo import *
-from packing_coloring.algorithms.constructive.rlf_algo import *
+from packing_coloring.algorithms.solution import PackColSolution
+from packing_coloring.algorithms.constructive.neighborhood.random import random_order
+from packing_coloring.algorithms.constructive.neighborhood.closeness import closeness_order
+from packing_coloring.algorithms.constructive.neighborhood.betweenness import betweenness_order
+from packing_coloring.algorithms.constructive.greedy_algo import greedy_algorithm
+from packing_coloring.algorithms.constructive.rlf_algo import rlf_algorithm
 from packing_coloring.utils.benchmark_utils import set_env, search_step_trace
 
 
@@ -66,7 +67,7 @@ def aics_algorithm(prob, iter_count=200, random_init=True):
         # The Constructor
         cur_sol = greedy_algorithm(prob, priority_seq)
         cur_score = cur_sol.get_max_col()
-        print(np.round(mean_score, decimals=2), cur_score)
+        # print(np.round(mean_score, decimals=2), cur_score)
 
         # The Analyzer
         if cur_score >= np.floor(mean_score):
