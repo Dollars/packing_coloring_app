@@ -3,18 +3,13 @@
 from __future__ import print_function
 import graph_tool.all as gt
 import numpy as np
-import sys
 
-# import packing_coloring.graph_generator as gg
-# sys.path.append('..')
 import packing_coloring.utils.benchmark_utils as bu
-bu.search_step_trace.enabled = True
-
 from packing_coloring.utils import get_distance_matrix
 import packing_coloring.algorithms.search_space.partial_valide_col as pvc
-import packing_coloring.graph_generator.generator as gntr
-from packing_coloring.algorithms.problem import GraphProblem
-from packing_coloring.algorithms.perturbative.tabupackcol import partial_pack_col
+import packing_coloring.graph_generator as gntr
+from packing_coloring.algorithms import GraphProblem
+from packing_coloring.algorithms.perturbative import partial_pack_col
 import argparse
 
 

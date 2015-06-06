@@ -28,7 +28,7 @@ debugLevel <- 1
 
 ## Number of calls to hookRun to execute in parallel. Less than 2
 # means calls to hookRun are sequentially executed.
-parallel <- 10
+parallel <- 20
 
 ## Enable/disable MPI. Use MPI to execute hookRun in parallel
 ## (parameter parallel is the number of slaves).

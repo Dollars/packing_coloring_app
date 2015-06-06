@@ -343,7 +343,7 @@ def parse_output(out):
 
 if __name__ == '__main__':
     # reading parameters and setting problem specific stuff
-    executable = '../partial_pcol.py'
+    executable = './partial_pcol.py'
     fixed_params = ''
     instance = sys.argv[1]
     candidate = sys.argv[2]
