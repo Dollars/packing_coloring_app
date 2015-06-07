@@ -4,6 +4,7 @@ from __future__ import print_function
 import numpy as np
 import numpy.random as rd
 import time
+import logging
 
 from packing_coloring.algorithms.search_space.complete_illegal_col import *
 from packing_coloring.algorithms.search_space.partial_valide_col import *
@@ -80,7 +81,7 @@ def tabu_kpack_col(prob, k_col, sol=None, tt_a=10,
         prev_col = sol[vertex]
 
         if col == 0:
-            # print("tabue tenure too high")
+            logging.warning("tabue list too large")
             break
 
         prev_score = score
@@ -120,7 +121,7 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
-        # print(k_col, k_lim)
+        logging.warning("{0}, {1}".format(k_col, k_lim))
         sol = tabu_kpack_col(prob, k_col, sol,
                              tt_a, tt_d, max_iter, count_max)
         new_score = count_conflicting_edge(prob, sol)
@@ -139,7 +140,7 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5,
             k_col = max_col + 1
 
         if time.time() >= end_time:
-            # print("time stop!")
+            logging.warning("time stop!")
             break
 
     return best_sol
@@ -160,7 +161,7 @@ def prepare_sol(prob, k_col, max_iter, sol=None):
         sol[sol >= diam] = 0
 
     if has_pillars:
-        # print("has pillars")
+        logging.warning("has pillars")
         # tabu_list[sol != 0] = max_iter + 1
         for v in np.arange(prob.v_size)[sol != 0]:
             v_col = sol[v]
@@ -192,14 +193,14 @@ def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
     best_score = score = sol.count_uncolored()
 
     if score == 0:
-        # print("no challenge men!", k_col - sol.get_max_col())
+        logging.warning("no challenge men! {0}".format(k_col - sol.get_max_col()))
 
     count_iter = count_slope = 0
     while score > 0 and count_iter <= max_iter:
         vertex, col, conflicts = best_i_swap(prob, sol, best_score,
                                              colors, tabu_list)
         if vertex == -1:
-            # print("tabue list too large")
+            logging.warning("tabue list too large")
             break
         sol[conflicts] = 0
         sol[vertex] = col
@@ -236,7 +237,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
     if sol is None:
         sol = rlf_algorithm(prob)
     elif start_col is not None:
-        # print("get start col:", start_col)
+        logging.warning("get start col: {0}".format(start_col))
         sol = partial_kpack_col(prob, start_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
                                 max_iter=max_iter, count_max=count_max)
     best_sol = sol.copy()
@@ -245,7 +246,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
-        # print(k_col, k_lim)
+        logging.warning("{0}, {1}".format(k_col, k_lim))
         sol = partial_kpack_col(prob, k_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
                                 max_iter=max_iter, count_max=count_max)
 
@@ -279,7 +280,7 @@ def react_partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
     best_score = score = sol.count_uncolored()
 
     if score == 0:
-        # print("no challenge men!", k_col - sol.get_max_col())
+        logging.warning("no challenge men! {0}".format(k_col - sol.get_max_col()))
 
     min_score = float('inf')
     max_score = 0
@@ -289,6 +290,7 @@ def react_partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
         vertex, col, conflicts = best_i_swap(prob, sol, best_score,
                                              colors, tabu_list)
         if vertex == -1:
+            logging.warning("tabue list too large")
             break
         sol[conflicts] = 0
         sol[vertex] = col
@@ -334,7 +336,7 @@ def react_partial_pack_col(prob, k_count=3, sol=None, start_col=None, tt_a=10,
     if sol is None:
         sol = rlf_algorithm(prob)
     elif start_col is not None:
-        # print("get start col:", start_col)
+        logging.warning("get start col: {0}".format(start_col))
         sol = react_partial_kpack_col(
             prob, start_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
             max_iter=max_iter, iter_period=iter_period, tenure_inc=tenure_inc)
@@ -344,7 +346,7 @@ def react_partial_pack_col(prob, k_count=3, sol=None, start_col=None, tt_a=10,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
-        # print(k_col)
+        logging.warning("{0}, {1}".format(k_col, k_lim))
         sol = react_partial_kpack_col(
             prob, k_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
             max_iter=max_iter, iter_period=iter_period, tenure_inc=tenure_inc)
