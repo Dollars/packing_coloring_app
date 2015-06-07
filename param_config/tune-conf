@@ -9,6 +9,10 @@ parameterFile <- "./parameters-partial_pcol.txt"
 ## Directory where the programs will be run.
 execDir <- "./partial-arena"
 
+## File to save tuning results as an R dataset, either absolute path
+## or relative to execDir.
+logFile <- "./irace.Rdata"
+
 ## Folder where tuning instances are located, either absolute or
 ## relative to working directory.
 instanceDir <- "./instances"
@@ -16,7 +20,16 @@ instanceDir <- "./instances"
 ## The maximum number of runs (invocations of hookRun) that will performed. It
 ## determines the (maximum) budget of experiments for the tuning, unless
 ## timeBudget is positive.
-maxExperiments <- 200
+maxExperiments <- 1000
+
+## The maximum computation time that should be used for tuning in
+## seconds. This only works when tuning for time. 0 means no time
+## limit (use maxExperiments).
+# timeBudget <- 0
+
+## An estimation of the average time in seconds required for one
+## experiment. Only required if timeBudget is positive.
+# timeEstimate <- 0
 
 ## Indicates the number of decimal places to be considered for the
 ## real parameters.
@@ -26,9 +39,12 @@ digits <- 1
 ## more verbose debug messages.
 debugLevel <- 1
 
+## Sample the instances or take them always in the same order.
+sampleInstances <- 1
+
 ## Number of calls to hookRun to execute in parallel. Less than 2
 # means calls to hookRun are sequentially executed.
-parallel <- 20
+parallel <- 15
 
 ## Enable/disable MPI. Use MPI to execute hookRun in parallel
 ## (parameter parallel is the number of slaves).
@@ -40,7 +56,7 @@ mpi <- 1
 ## Previously saved log file to recover the execution of irace, either
 ## absolute path or relative to the current directory. If empty or
 ## NULL, recovery is not performed.
-# recoveryFile <- "recover.backup"
+# recoveryFile <- "recovery.backup"
 
 ## END of configuration file
 ############################################################################
