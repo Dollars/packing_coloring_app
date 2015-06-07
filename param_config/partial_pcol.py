@@ -64,7 +64,8 @@ if __name__ == "__main__":
               "tt_a": args.tt_a,
               "tt_d": args.tt_d,
               "max_iter": args.max_iter,
-              "count_max": args.max_iter}
+              "count_max": args.max_iter,
+              "duration": 20}
 
     sol = benchmark_function(g, partial_pack_col, **kwargs)
     print(sol.get_max_col())

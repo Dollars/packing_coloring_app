@@ -338,7 +338,7 @@ class Hookrun(object):
 # your job
 def parse_output(out):
     # parsing last thing printed
-    return out.strip("b'").split("\\n")[0]
+    return out.strip("b'").split("\\n")[-1]
 
 
 if __name__ == '__main__':
@@ -350,7 +350,7 @@ if __name__ == '__main__':
     parameters = sys.argv[3:]
 
     # maximum number of trials before giving up with the configuration
-    max_tests = 10
+    max_tests = 2
 
     hr = Hookrun(executable, fixed_params, instance, parse_output,
                  candidate, parameters, max_tests)
@@ -372,7 +372,7 @@ if __name__ == '__main__':
     # execute through temporary files with timeout
     # after 2 minutes of *CPU time* if we do not get the results we kill
     # the subprocess and try another time...
-    hr.exec_mode(hr.execute_threaded_timeout, 360)
+    hr.exec_mode(hr.execute_threaded_timeout, 1500)
 
     # environment variables that should be set for testing each configuration
     # hr.source_env('../../../../configuration')

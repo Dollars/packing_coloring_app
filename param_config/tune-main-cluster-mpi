@@ -4,8 +4,8 @@
 #PBS -l nodes=21
 #PBS -l mem=60gb
 #PBS -m bae
-#PBS -o $EXECDIR/irace-partial.stdout 
-#PBS -e $EXECDIR/irace-partial.stderr 
+#PBS -o $HOME/irace-partial.stdout 
+#PBS -e $HOME/irace-partial.stderr 
 
 module load graph-tool/2.2.42-foss-2015a-Python-2.7.9
 module load R/3.1.1-intel-2014b
