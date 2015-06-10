@@ -2,12 +2,25 @@ from __future__ import print_function
 import functools
 from inspect import getcallargs
 try:
-    from time import process_time
+    from time import perf_counter as process_time
 except ImportError:
     from time import clock as process_time
-
 from os import path
 import shortuuid as sid
+
+
+def trace(func):
+    if search_step_trace.enabled:
+        return search_step_trace(func)
+    else:
+        return func
+
+
+def print_trace(prob, sol):
+    if search_step_trace.enabled:
+        search_step_trace.print_trace(prob, sol)
+    else:
+        pass
 
 
 class search_step_trace(object):
@@ -28,29 +41,26 @@ class search_step_trace(object):
         self.procceding = False
 
     def __call__(self, *args, **kwargs):
-        if search_step_trace.enabled:
-            self.__numcalls += 1
+        self.__numcalls += 1
 
-            self.procceding = True
-            self.start_time = process_time()
-            result = self.__f(*args, **kwargs)
-            elapsed = process_time() - self.start_time
-            self.procceding = False
+        self.procceding = True
+        self.start_time = process_time()
+        result = self.__f(*args, **kwargs)
+        elapsed = process_time() - self.start_time
+        self.procceding = False
 
-            self.__cumulative_time += elapsed
-            old_mean = self.__elapsed_time['mean']
-            old_std = self.__elapsed_time['std'] * (self.__numcalls - 1)
-            delta = (elapsed - old_mean)
+        self.__cumulative_time += elapsed
+        old_mean = self.__elapsed_time['mean']
+        old_std = self.__elapsed_time['std'] * (self.__numcalls - 1)
+        delta = (elapsed - old_mean)
 
-            new_mean = (old_mean + (delta/self.__numcalls))
-            new_std = old_std + ((elapsed - old_mean) * (elapsed - new_mean))
-            new_std = (new_std / self.__numcalls)
-            self.__elapsed_time['mean'] = new_mean
-            self.__elapsed_time['std'] = new_std
+        new_mean = (old_mean + (delta/self.__numcalls))
+        new_std = old_std + ((elapsed - old_mean) * (elapsed - new_mean))
+        new_std = (new_std / self.__numcalls)
+        self.__elapsed_time['mean'] = new_mean
+        self.__elapsed_time['std'] = new_std
 
-            return result
-        else:
-            return self.__f(*args, **kwargs)
+        return result
 
     def count(self):
         return self.__numcalls
@@ -99,17 +109,15 @@ class search_step_trace(object):
 
     @staticmethod
     def clear_func(func):
-        if search_step_trace.enabled:
-            trace = search_step_trace.__instances.get(func)
-            if trace is not None:
-                trace.clear_vars()
+        trace = search_step_trace.__instances.get(func)
+        if trace is not None:
+            trace.clear_vars()
 
     @staticmethod
     def clear_all():
-        if search_step_trace.enabled:
-            for func, trace in search_step_trace.__instances.items():
-                trace.clear_vars()
-            search_step_trace.__id = sid.ShortUUID().random(length=10)
+        for func, trace in search_step_trace.__instances.items():
+            trace.clear_vars()
+        search_step_trace.__id = sid.ShortUUID().random(length=10)
 
     @staticmethod
     def print_format():
@@ -121,19 +129,18 @@ class search_step_trace(object):
 
     @staticmethod
     def print_trace(prob, sol):
-        if search_step_trace.enabled:
-            env_name = search_step_trace.env_name
-            dir_name = path.abspath(search_step_trace.dir_path)
-            tracefname = "{0}/{1}.qst".format(dir_name, env_name)
-            with open(tracefname, 'a') as f:
-                trace = search_step_trace.dump_all()
-                for name, data in trace.items():
-                    if data is not None:
-                        print(prob.name, ", ", sol.get_max_col(), ", ",
-                              search_step_trace.__id, ", ",
-                              search_step_trace.csv_format().format(name, data),
-                              file=f, sep="")
-                print("", file=f)
+        env_name = search_step_trace.env_name
+        dir_name = path.abspath(search_step_trace.dir_path)
+        tracefname = "{0}/{1}.qst".format(dir_name, env_name)
+        with open(tracefname, 'a') as f:
+            trace = search_step_trace.dump_all()
+            for name, data in trace.items():
+                if data is not None:
+                    print(prob.name, ", ", sol.get_max_col(), ", ",
+                          search_step_trace.__id, ", ",
+                          search_step_trace.csv_format().format(name, data),
+                          file=f, sep="")
+            print("", file=f)
 
 
 def set_env(func):

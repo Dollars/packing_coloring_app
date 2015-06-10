@@ -1,0 +1,8 @@
+### PARAMETER FILE FOR THE ACOTSP SOFTWARE
+# name      switch           type   values                      [conditions (using R syntax)]
+k_count         "--k_count "         i      (1, 10)
+tt_a            "--tt_a "            i      (5, 200)
+tt_d            "--tt_d "            r      (0.5, 3.0)
+max_iter        "--max_iter "        i      (500, 10000)
+iter_period     "--iter_period "     i      (10, 500)
+tenure_inc      "--tenure_inc "      i      (1, 50)

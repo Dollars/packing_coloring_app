@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import numpy as np
 import graph_tool.all as gt
 from packing_coloring.utils.graph_utils import get_distance_matrix

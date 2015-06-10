@@ -9,7 +9,7 @@ from packing_coloring.utils import get_distance_matrix
 import packing_coloring.algorithms.search_space.partial_valide_col as pvc
 import packing_coloring.graph_generator as gntr
 from packing_coloring.algorithms import GraphProblem
-from packing_coloring.algorithms.perturbative import partial_pack_col
+from packing_coloring.algorithms.perturbative import react_partial_pack_col
 import argparse
 
 
@@ -49,8 +49,13 @@ if __name__ == "__main__":
                         type=float, required=True)
     parser.add_argument('--max_iter', dest='max_iter',
                         type=int, required=True)
-    parser.add_argument('--count_max', dest='count_max',
+    parser.add_argument('--iter_period', dest='iter_period',
                         type=int, required=True)
+    parser.add_argument('--tenure_inc', dest='tenure_inc',
+                        type=int, required=True)
+    parser.add_argument('--duration', dest='duration',
+                        type=int, default=20)
+
     args = parser.parse_args()
 
     if args.seed is not None:
@@ -64,10 +69,11 @@ if __name__ == "__main__":
               "tt_a": args.tt_a,
               "tt_d": args.tt_d,
               "max_iter": args.max_iter,
-              "count_max": args.max_iter,
-              "duration": 20}
+              "iter_period": args.iter_period,
+              "tenure_inc": args.tenure_inc,
+              "duration": args.duration}
 
-    sol = benchmark_function(g, partial_pack_col, **kwargs)
+    sol = benchmark_function(g, react_partial_pack_col, **kwargs)
     print(sol.get_max_col())
 
     if args.print_sol:

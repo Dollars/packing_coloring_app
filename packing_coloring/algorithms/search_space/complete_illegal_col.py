@@ -3,10 +3,10 @@ from __future__ import print_function
 
 import numpy as np
 import numpy.random as rd
-from packing_coloring.utils.benchmark_utils import search_step_trace
+from packing_coloring.utils.benchmark_utils import trace
 
 
-@search_step_trace
+@trace
 def conflicting_vertices(prob, sol):
     conflicting = np.zeros(prob.v_size, dtype=bool)
     for v in range(prob.v_size):
@@ -18,13 +18,13 @@ def conflicting_vertices(prob, sol):
     return conflicting
 
 
-@search_step_trace
+@trace
 def count_conflicting_vertex(prob, sol):
     score = np.sum(conflicting_vertices(prob, sol))
     return score
 
 
-@search_step_trace
+@trace
 def count_conflicting_edge(prob, sol):
     conflicting = 0
     for v in range(prob.v_size):
@@ -36,12 +36,12 @@ def count_conflicting_edge(prob, sol):
     return np.floor(conflicting/2)
 
 
-@search_step_trace
+@trace
 def one_exchange(prob, sol):
     pass
 
 
-@search_step_trace
+@trace
 def best_one_exchange(prob, sol, fitness, score,
                       the_best_score, colors, tabu_list):
     vertices = np.arange(prob.v_size)

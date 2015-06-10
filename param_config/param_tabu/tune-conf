@@ -1,13 +1,13 @@
 ############################################################################
 ## Configuration for Iterated Race,
-## to tune the partial_pcol software.
+## to tune the tabu_pcol software.
 ############################################################################
 
 ## File that contains the description of the parameters.
-parameterFile <- "./parameters-partial_pcol.txt"
+parameterFile <- "./parameters-tabu_pcol.txt"
 
 ## Directory where the programs will be run.
-execDir <- "./partial-arena"
+execDir <- "./tabu-arena"
 
 ## File to save tuning results as an R dataset, either absolute path
 ## or relative to execDir.
@@ -20,7 +20,7 @@ instanceDir <- "./instances"
 ## The maximum number of runs (invocations of hookRun) that will performed. It
 ## determines the (maximum) budget of experiments for the tuning, unless
 ## timeBudget is positive.
-maxExperiments <- 1000
+maxExperiments <- 5000
 
 ## The maximum computation time that should be used for tuning in
 ## seconds. This only works when tuning for time. 0 means no time
@@ -41,6 +41,13 @@ debugLevel <- 1
 
 ## Sample the instances or take them always in the same order.
 sampleInstances <- 1
+
+## Specifies how many instances are seen before the first elimination
+## test. It must be a multiple of eachTest.
+firstTest <- 15
+
+## Specifies how many instances are seen between elimination tests.
+eachTest <- 5
 
 ## Number of calls to hookRun to execute in parallel. Less than 2
 # means calls to hookRun are sequentially executed.

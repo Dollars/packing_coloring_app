@@ -10,7 +10,7 @@ from packing_coloring.algorithms.search_space.complete_illegal_col import *
 from packing_coloring.algorithms.search_space.partial_valide_col import *
 from packing_coloring.algorithms.solution import *
 from packing_coloring.algorithms.constructive.rlf_algo import rlf_algorithm
-from packing_coloring.utils.benchmark_utils import search_step_trace
+from packing_coloring.utils.benchmark_utils import trace, print_trace
 
 
 def update_fitness(prob, sol, fitness, colors, vertex, col):
@@ -57,7 +57,7 @@ def init_fitness(prob, sol, colors):
     return fitness
 
 
-@search_step_trace
+@trace
 def tabu_kpack_col(prob, k_col, sol=None, tt_a=10,
                    tt_d=0.5, max_iter=1000, count_max=10):
     colors = np.arange(1, k_col+1)
@@ -133,7 +133,7 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5,
                 count = 0
                 k_lim = k_col
                 best_sol = sol.copy()
-                search_step_trace.print_trace(prob, best_sol)
+                print_trace(prob, best_sol)
 
             k_col = max_col - 1
         else:
@@ -181,7 +181,7 @@ def prepare_sol(prob, k_col, max_iter, sol=None):
     return sol, tabu_list
 
 
-@search_step_trace
+@trace
 def partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
                       max_iter=1000, count_max=10):
     if k_col >= sol.get_max_col() and sol.count_uncolored() == 0:
@@ -258,7 +258,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
                 count = 0
                 k_lim = k_col
                 best_sol = sol.copy()
-                search_step_trace.print_trace(prob, best_sol)
+                print_trace(prob, best_sol)
             k_col = max_col - 1
 
         if time.time() >= end_time:
@@ -267,7 +267,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
     return best_sol
 
 
-@search_step_trace
+@trace
 def react_partial_kpack_col(prob, k_col, sol=None, tt_a=10, tt_d=0.6,
                             max_iter=1000, iter_period=100, tenure_inc=5):
 
@@ -358,7 +358,7 @@ def react_partial_pack_col(prob, k_count=3, sol=None, start_col=None, tt_a=10,
                 count = 0
                 k_lim = k_col
                 best_sol = sol.copy()
-                search_step_trace.print_trace(prob, best_sol)
+                print_trace(prob, best_sol)
             k_col = max_col - 1
 
         if time.time() >= end_time:

@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import numpy as np
-from packing_coloring.utils import search_step_trace
-
 
 class PackColSolution:
     def __init__(self, g_prob=None):

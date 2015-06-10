@@ -1,0 +1,69 @@
+############################################################################
+## Configuration for Iterated Race,
+## to tune the partial_pcol software.
+############################################################################
+
+## File that contains the description of the parameters.
+parameterFile <- "./parameters-partial_pcol.txt"
+
+## Directory where the programs will be run.
+execDir <- "./partial-arena"
+
+## File to save tuning results as an R dataset, either absolute path
+## or relative to execDir.
+logFile <- "./irace.Rdata"
+
+## Folder where tuning instances are located, either absolute or
+## relative to working directory.
+instanceDir <- "./instances"
+
+## The maximum number of runs (invocations of hookRun) that will performed. It
+## determines the (maximum) budget of experiments for the tuning, unless
+## timeBudget is positive.
+maxExperiments <- 5000
+
+## The maximum computation time that should be used for tuning in
+## seconds. This only works when tuning for time. 0 means no time
+## limit (use maxExperiments).
+# timeBudget <- 0
+
+## An estimation of the average time in seconds required for one
+## experiment. Only required if timeBudget is positive.
+# timeEstimate <- 0
+
+## Indicates the number of decimal places to be considered for the
+## real parameters.
+digits <- 1
+
+## A value of 0 silences all debug messages. Higher values provide
+## more verbose debug messages.
+debugLevel <- 1
+
+## Sample the instances or take them always in the same order.
+sampleInstances <- 1
+
+## Specifies how many instances are seen before the first elimination
+## test. It must be a multiple of eachTest.
+firstTest <- 15
+
+## Specifies how many instances are seen between elimination tests.
+eachTest <- 5
+
+## Number of calls to hookRun to execute in parallel. Less than 2
+# means calls to hookRun are sequentially executed.
+parallel <- 15
+
+## Enable/disable MPI. Use MPI to execute hookRun in parallel
+## (parameter parallel is the number of slaves).
+mpi <- 1
+
+## Confidence level for the elimination test.
+# confidence <- 0.95
+
+## Previously saved log file to recover the execution of irace, either
+## absolute path or relative to the current directory. If empty or
+## NULL, recovery is not performed.
+# recoveryFile <- "recovery.backup"
+
+## END of configuration file
+############################################################################

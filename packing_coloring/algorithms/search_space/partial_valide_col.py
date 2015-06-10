@@ -2,11 +2,11 @@
 from __future__ import print_function
 
 import numpy as np
-from packing_coloring.utils.benchmark_utils import search_step_trace
+from packing_coloring.utils.benchmark_utils import trace
 
 random_ok = True
 
-@search_step_trace
+@trace
 def k_colorable_set(prob, sol, k_col):
     k_colorable = sol.uncolored()
     k_colored = (sol.pack_col == k_col)
@@ -16,7 +16,7 @@ def k_colorable_set(prob, sol, k_col):
     return k_colorable
 
 
-@search_step_trace
+@trace
 def k_uncolorable_set(prob, sol, k_col):
     k_uncolorable = np.zeros_like(sol.colored())
     k_colored = (sol.pack_col == k_col)
@@ -28,7 +28,7 @@ def k_uncolorable_set(prob, sol, k_col):
     return k_uncolorable
 
 
-@search_step_trace
+@trace
 def coloried_and_k_uncolorable_set(prob, sol, k_col):
     k_uncolorable = sol.colored()
     k_colored = (sol.pack_col == k_col)
@@ -38,7 +38,7 @@ def coloried_and_k_uncolorable_set(prob, sol, k_col):
     return k_uncolorable
 
 
-@search_step_trace
+@trace
 def partition_next_vertex(prob, sol, k_col):
     vertices = np.arange(prob.v_size)
     k_col_set = k_colorable_set(prob, sol, k_col)
@@ -72,7 +72,7 @@ def partition_next_vertex(prob, sol, k_col):
     return v
 
 
-@search_step_trace
+@trace
 def conflicting_vertices(prob, sol):
     conflicting = np.zeros(prob.v_size, dtype=bool)
     for v in range(prob.v_size):
@@ -84,7 +84,7 @@ def conflicting_vertices(prob, sol):
     return conflicting_vertices
 
 
-@search_step_trace
+@trace
 def assign_col(prob, sol, k_col, v):
     v_conflicts = np.logical_and(
             sol[:] == k_col, prob[v] <= k_col)
@@ -92,7 +92,7 @@ def assign_col(prob, sol, k_col, v):
     return v_conflicts
 
 
-@search_step_trace
+@trace
 def best_i_swap(prob, sol, the_best_score, colors, tabu_list):
     uncolored = sol.uncolored()
     vertices = np.arange(prob.v_size)[uncolored]
