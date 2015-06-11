@@ -12,6 +12,6 @@ module load R/3.1.1-intel-2014b
 
 MPIRUN=mpirun
 
-cd $HOME/tuning
+cd $HOME/tuning-partial
 
-$MPIRUN -outfile-pattern $HOME/mpi.out -errfile-pattern $HOME/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning/partial-arena --mpi 1 --parallel 20
+$MPIRUN -outfile-pattern $HOME/mpi.out -errfile-pattern $HOME/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning/arena --mpi 1 --parallel 4

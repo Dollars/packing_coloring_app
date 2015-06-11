@@ -40,7 +40,7 @@ import threading
 try:
     from time import perf_counter as process_time
 except ImportError:
-    from time import clock as process_time
+    from time import time as process_time
 
 
 class Hookrun(object):
@@ -311,7 +311,7 @@ class Hookrun(object):
         # printing the result
         if test < self.max_tests:
             self.logger.debug('returning cost: ' + str(cost))
-            sys.stdout.write(str(cost) + " " + end_time + '\n')
+            sys.stdout.write(str(cost) + " " + str(end_time) + '\n')
             # force to exit all possible threads except the main one (those
             # launched with execute_threaded_timeout) are run as daemons so
             # they should be terminated automatically when exiting, but just

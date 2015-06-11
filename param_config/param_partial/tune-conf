@@ -7,7 +7,7 @@
 parameterFile <- "./parameters-partial_pcol.txt"
 
 ## Directory where the programs will be run.
-execDir <- "./partial-arena"
+execDir <- "./arena"
 
 ## File to save tuning results as an R dataset, either absolute path
 ## or relative to execDir.
@@ -25,7 +25,7 @@ instanceDir <- "./instances"
 ## The maximum computation time that should be used for tuning in
 ## seconds. This only works when tuning for time. 0 means no time
 ## limit (use maxExperiments).
-timeBudget <- 172800
+timeBudget <- 129600
 
 ## An estimation of the average time in seconds required for one
 ## experiment. Only required if timeBudget is positive.
