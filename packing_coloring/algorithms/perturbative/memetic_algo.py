@@ -121,7 +121,7 @@ def memetic_algorithm(prob, pop_size, nbr_gen, pool_size,
     #     print("individu #", i, "'s quality:", indiv.get_max_col())
     pop = update_population(prob, pop, eval_func)
 
-    p_nbr = max(min(int(np.ceil(pop_size*breeding_rate)), pop_size), 2)
+    p_nbr = max(min(int(np.ceil(pop_size*breeding_rate)), pop_size-1), 2)
 
     best_sol = pop[0]
     best_score = best_sol.get_max_col()
