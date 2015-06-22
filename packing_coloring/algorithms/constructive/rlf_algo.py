@@ -4,7 +4,7 @@ from __future__ import print_function
 import numpy as np
 from packing_coloring.algorithms.search_space.partial_valide_col import *
 from packing_coloring.algorithms.solution import *
-from packing_coloring.utils.benchmark_utils import search_step_trace
+from packing_coloring.utils.benchmark_utils import trace, print_trace
 
 
 def rlf_algorithm(prob, sol=None):
@@ -22,5 +22,4 @@ def rlf_algorithm(prob, sol=None):
 
         k_col += 1
 
-    search_step_trace.print_trace(prob, coloring)
     return coloring

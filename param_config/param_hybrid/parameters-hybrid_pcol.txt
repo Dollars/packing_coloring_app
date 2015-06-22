@@ -1,0 +1,10 @@
+### PARAMETER FILE FOR THE ACOTSP SOFTWARE
+# name          switch               type   values          [conditions (using R syntax)]
+pop_size        "--pop_size "        i      (10, 50)
+nbr_gen         "--nbr_gen "         i      (5, 100)
+pool_size       "--pool_size "       i      (1, 3)
+replace_rate    "--replace_rate "    r      (0.1, 1)
+mut_prob        "--mut_prob "        r      (0.05, 1.0)
+local_search    "--local_search "    i      (0, 2)
+init_pop        "--init_pop "        i      (0, 2)
+crossover       "--crossover "       i      (0, 3)

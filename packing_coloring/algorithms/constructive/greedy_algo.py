@@ -3,10 +3,10 @@ from __future__ import print_function
 
 import numpy as np
 from packing_coloring.algorithms.solution import PackColSolution
-from packing_coloring.utils.benchmark_utils import search_step_trace
+from packing_coloring.utils.benchmark_utils import trace, print_trace
 
 
-@search_step_trace
+@trace
 def assign_min_pcol(prob, coloring, vi):
     vi_dist = prob[vi]
 
@@ -26,7 +26,7 @@ def assign_min_pcol(prob, coloring, vi):
     return coloring
 
 
-@search_step_trace
+@trace
 def greedy_algorithm(prob, ordering):
     coloring = PackColSolution(prob)
     if callable(ordering):
@@ -39,5 +39,4 @@ def greedy_algorithm(prob, ordering):
     for v in vertex_order[1:]:
         assign_min_pcol(prob, coloring, v)
 
-    coloring.get_trace()
     return coloring

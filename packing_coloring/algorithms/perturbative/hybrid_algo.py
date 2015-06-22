@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import numpy as np
 import numpy.random as rd
-import time
 import logging
 
 from packing_coloring.algorithms.search_space.complete_illegal_col import *
@@ -17,7 +16,7 @@ from packing_coloring.utils.benchmark_utils import trace, print_trace
 def generate_population(prob, size, heuristic, init_args):
     logging.info("Init population by permut")
     pop = []
-    indiv = heuristic(prob, random_init=False, **init_args)
+    indiv = heuristic(prob, **init_args)
     permut = np.arange(1, indiv.get_max_col()+1, dtype=int)
     pop.append(indiv)
     logging.info("init candidate 0: " + str(indiv.get_max_col()))
@@ -27,7 +26,7 @@ def generate_population(prob, size, heuristic, init_args):
         priority = indiv.get_by_permut(new_permut)
         new_indiv = greedy_algorithm(prob, priority)
         pop.append(new_indiv)
-        logging.info("init candidate " + str(i) + ": " + pop[i].get_max_col())
+        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
 
 
@@ -35,9 +34,9 @@ def generate_population2(prob, size, heuristic, init_args):
     logging.info("Init population by random order")
     pop = []
     for i in range(size):
-        indiv = heuristic(prob, random_init=(i != 0), **init_args)
+        indiv = heuristic(prob, **init_args)
         pop.append(indiv)
-        logging.info("init candidate " + str(i) + ": " + pop[i].get_max_col())
+        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
 
 
@@ -45,9 +44,9 @@ def generate_population3(prob, size, heuristic, init_args):
     logging.info("Init population by RLF")
     pop = []
     for i in range(size):
-        indiv = heuristic(prob, random_init=False, **init_args)
+        indiv = heuristic(prob, **init_args)
         pop.append(indiv)
-        logging.info("init candidate " + str(i) + ": " + pop[i].get_max_col())
+        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
 
 
@@ -78,7 +77,7 @@ def choose_parents(pop, nbr, tournament_size):
 
 
 @trace
-def crossover(prob, sols):
+def crossover_permut(prob, sols):
     logging.info("Crossover stupid and easy")
     p1 = sols[0].get_greedy_order()
     p2 = sols[1].get_greedy_order()
@@ -301,13 +300,26 @@ def update_population(prob, pop, eval_func, nbr_gen=None):
     return pop
 
 
-def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate, mut_prob,
-                     local_search, ls_args, init_heur, init_args, eval_func):
-    pop = generate_population3(prob, pop_size, init_heur, init_args)
+def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate,
+                     mut_prob, local_search, ls_args, init_heur,
+                     init_args, eval_func, init_methode, crossover_methode):
+
+    crossovers = [crossover_permut,
+                  crossover_cx,
+                  crossover_cover,
+                  crossover_area]
+
+    init_pops = [generate_population,
+                 generate_population2,
+                 generate_population3]
+
+    crossover = crossovers[crossover_methode]
+    init_pop = init_pops[init_methode]
+
+    pop = init_pop(prob, pop_size, init_heur, init_args)
     # for i, indiv in enumerate(pop):
     #     pop[i] = local_search(prob, sol=indiv, **ls_args)
-        # print("individu #", i, "'s quality:", pop[i].get_max_col())
-
+    #     print("individu #", i, "'s quality:", pop[i].get_max_col())
     pop = update_population(prob, pop, eval_func, 0)
 
     best_sol = pop[0]
@@ -321,8 +333,8 @@ def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate, mut_prob,
         while len(new_gen) < new_gen_size:
             parents = choose_parents(pop, 2, pool_size)
             logging.info("Parents: (" + str(parents[0].get_max_col()) +
-                         ", " + str(parents[1].get_max_col()) +")")
-            child = crossover_area(prob, parents)
+                         ", " + str(parents[1].get_max_col()) + ")")
+            child = crossover(prob, parents)
             # child = crossover_area(prob, parents)
             # child = crossover_cover(prob, parents)
             child = local_search(prob, sol=child, **ls_args)
