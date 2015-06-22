@@ -16,7 +16,7 @@ from packing_coloring.algorithms.constructive.greedy_algo import greedy_algorith
 def generate_population(prob, size, heuristic, init_args):
     logging.info("Init population by permut")
     pop = []
-    indiv = heuristic(prob, random_init=False, **init_args)
+    indiv = heuristic(prob, **init_args)
     permut = np.arange(1, indiv.get_max_col()+1, dtype=int)
     pop.append(indiv)
     logging.info("init candidate 0: " + str(indiv.get_max_col()))
@@ -32,7 +32,7 @@ def generate_population2(prob, size, heuristic, init_args):
     logging.info("Init population by random order")
     pop = []
     for i in range(size):
-        indiv = heuristic(prob, random_init=(i != 0), **init_args)
+        indiv = heuristic(prob, **init_args)
         pop.append(indiv)
         logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
@@ -42,7 +42,7 @@ def generate_population3(prob, size, heuristic, init_args):
     logging.info("Init population by RLF")
     pop = []
     for i in range(size):
-        indiv = heuristic(prob, random_init=False, **init_args)
+        indiv = heuristic(prob, **init_args)
         pop.append(indiv)
         logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
@@ -121,7 +121,7 @@ def memetic_algorithm(prob, pop_size, nbr_gen, pool_size,
     #     print("individu #", i, "'s quality:", indiv.get_max_col())
     pop = update_population(prob, pop, eval_func)
 
-    p_nbr = max(min(np.ceil(pop_size*breeding_rate), pop_size), 2)
+    p_nbr = max(min(int(np.ceil(pop_size*breeding_rate)), pop_size), 2)
 
     best_sol = pop[0]
     best_score = best_sol.get_max_col()

@@ -53,7 +53,7 @@ if __name__ == "__main__":
     parser.add_argument('--pool_size', dest='pool_size',
                         type=int, required=True)
     parser.add_argument('--breeding_rate', dest='breeding_rate',
-                        type=int, required=True)
+                        type=float, required=True)
 
     parser.add_argument('--init_pop', dest='init_pop',
                         type=int, required=True)
