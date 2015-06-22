@@ -12,7 +12,7 @@ from packing_coloring.algorithms import GraphProblem
 from packing_coloring.algorithms.constructive import rlf_algorithm
 from packing_coloring.algorithms.constructive import swo_algorithm
 from packing_coloring.algorithms.perturbative import partial_pack_col, react_partial_pack_col, tabu_pack_col
-from packing_coloring.algorithms.perturbative import hybrid_algorithm
+from packing_coloring.algorithms.perturbative import memetic_algorithm
 
 import argparse
 
@@ -52,14 +52,10 @@ if __name__ == "__main__":
                         type=int, required=True)
     parser.add_argument('--pool_size', dest='pool_size',
                         type=int, required=True)
-    parser.add_argument('--replace_rate', dest='replace_rate',
-                        type=float, required=True)
-    parser.add_argument('--mut_prob', dest='mut_prob',
-                        type=float, required=True)
+    parser.add_argument('--breeding_rate', dest='breeding_rate',
+                        type=int, required=True)
 
     parser.add_argument('--init_pop', dest='init_pop',
-                        type=int, required=True)
-    parser.add_argument('--crossover', dest='crossover',
                         type=int, required=True)
     parser.add_argument('--local_search', dest='local_search',
                         type=int, required=True)
@@ -92,18 +88,16 @@ if __name__ == "__main__":
     kwargs = {"pop_size": args.pop_size,
               "nbr_gen": args.nbr_gen,
               "pool_size": args.pool_size,
-              "replace_rate": args.replace_rate,
-              "mut_prob": args.mut_prob,
+              "breeding_rate": args.breeding_rate,
               "local_search": ls_methodes[args.local_search],
               "ls_args": ls_args[args.local_search],
               "init_heur": init_methodes[0],
               "init_args": init_args[0],
               "eval_func": eval_func,
               "init_methode": args.init_pop,
-              "crossover_methode": args.crossover,
               "duration": args.duration}
 
-    prob, sol = benchmark_function(g, hybrid_algorithm, **kwargs)
+    prob, sol = benchmark_function(g, memetic_algorithm, **kwargs)
     print(sol.get_max_col())
 
     if args.print_sol:

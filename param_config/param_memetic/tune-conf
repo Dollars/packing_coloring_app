@@ -4,7 +4,7 @@
 ############################################################################
 
 ## File that contains the description of the parameters.
-parameterFile <- "./parameters-hybrid_pcol.txt"
+parameterFile <- "./parameters-memetic_pcol.txt"
 
 ## Directory where the programs will be run.
 execDir <- "./arena"

@@ -19,12 +19,12 @@ def generate_population(prob, size, heuristic, init_args):
     indiv = heuristic(prob, random_init=False, **init_args)
     permut = np.arange(1, indiv.get_max_col()+1, dtype=int)
     pop.append(indiv)
-    logging.info("init candidate 0: " + indiv.get_max_col())
+    logging.info("init candidate 0: " + str(indiv.get_max_col()))
     for i in range(1, size):
         new_permut = rd.permutation(permut)
         priority = indiv.get_by_permut(new_permut)
         pop.append(greedy_algorithm(prob, priority))
-        logging.info("init candidate " + str(i) + ": " + pop[i].get_max_col())
+        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
 
 
@@ -34,7 +34,7 @@ def generate_population2(prob, size, heuristic, init_args):
     for i in range(size):
         indiv = heuristic(prob, random_init=(i != 0), **init_args)
         pop.append(indiv)
-        logging.info("init candidate " + str(i) + ": " + pop[i].get_max_col())
+        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
 
 
@@ -44,7 +44,7 @@ def generate_population3(prob, size, heuristic, init_args):
     for i in range(size):
         indiv = heuristic(prob, random_init=False, **init_args)
         pop.append(indiv)
-        logging.info("init candidate " + str(i) + ": " + pop[i].get_max_col())
+        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
 
 
@@ -106,14 +106,22 @@ def update_population(prob, pop, eval_func, nbr_gen=None):
     return pop
 
 
-def memetic_algorithm(prob, pop_size, nbr_gen, pool_size, p_nbr,
-                      local_search, ls_args, init_heur, init_args, eval_func):
+def memetic_algorithm(prob, pop_size, nbr_gen, pool_size,
+                      breeding_rate, local_search, ls_args, init_heur,
+                      init_args, eval_func, init_methode, duration):
+    end_time = time.time()+(duration*60)
 
-    pop = generate_population3(prob, pop_size, init_heur, init_args)
+    init_pops = [generate_population,
+                 generate_population2,
+                 generate_population3]
+    init_pop = init_pops[init_methode]
+    pop = init_pop(prob, pop_size, init_heur, init_args)
     # for i, indiv in enumerate(pop):
     #     pop[i] = local_search(prob, sol=indiv, **ls_args)
     #     print("individu #", i, "'s quality:", indiv.get_max_col())
     pop = update_population(prob, pop, eval_func)
+
+    p_nbr = max(min(np.ceil(pop_size*breeding_rate), pop_size), 2)
 
     best_sol = pop[0]
     best_score = best_sol.get_max_col()
@@ -129,5 +137,9 @@ def memetic_algorithm(prob, pop_size, nbr_gen, pool_size, p_nbr,
         if pop[0].get_max_col() < best_score:
             best_sol = pop[0]
             best_score = best_sol.get_max_col()
+
+        if time.time() >= end_time:
+            logging.warning("time stop!")
+            break
 
     return best_sol

@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import numpy.random as rd
+import time
 import logging
 
 from packing_coloring.algorithms.search_space.complete_illegal_col import *
@@ -301,9 +302,9 @@ def update_population(prob, pop, eval_func, nbr_gen=None):
 
 
 def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate,
-                     mut_prob, local_search, ls_args, init_heur,
-                     init_args, eval_func, init_methode, crossover_methode):
-
+                     mut_prob, local_search, ls_args, init_heur, init_args,
+                     eval_func, init_methode, crossover_methode, duration):
+    end_time = time.time()+(duration*60)
     crossovers = [crossover_permut,
                   crossover_cx,
                   crossover_cover,
@@ -364,5 +365,9 @@ def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate,
             best_sol = pop[0].copy()
             best_score = best_sol.get_max_col()
             print_trace(prob, best_sol)
+
+        if time.time() >= end_time:
+            logging.warning("time stop!")
+            break
 
     return best_sol
