@@ -1,8 +1,8 @@
 #!/bin/bash -l
 
-#PBS -l walltime=60:00:00
-#PBS -l nodes=8:ppn=1
-#PBS -l mem=20gb
+#PBS -l walltime=24:00:00
+#PBS -l nodes=5:ppn=1
+#PBS -l mem=10gb
 #PBS -m bae
 #PBS -o $HOME/tuning-memetic/irace-memetic.stdout 
 #PBS -e $HOME/tuning-memetic/irace-memetic.stderr 
@@ -15,4 +15,4 @@ MPIRUN=mpirun
 
 cd $HOME/tuning-memetic
 
-$MPIRUN -outfile-pattern $HOME/tuning-memetic/mpi.out -errfile-pattern $HOME/tuning-memetic/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning-memetic/arena --mpi 1 --parallel 7
+$MPIRUN -outfile-pattern $HOME/tuning-memetic/mpi.out -errfile-pattern $HOME/tuning-memetic/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning-memetic/arena --mpi 1 --parallel 4

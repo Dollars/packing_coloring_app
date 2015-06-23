@@ -1,11 +1,12 @@
 #!/bin/bash -l
 
 #PBS -l walltime=24:00:00
-#PBS -l nodes=21
-#PBS -l mem=60gb
+#PBS -l nodes=5:ppn=1
+#PBS -l mem=10gb
 #PBS -m bae
-#PBS -o $HOME/irace-partial.stdout 
-#PBS -e $HOME/irace-partial.stderr 
+#PBS -o $HOME/tuning-partial/irace-partial.stdout 
+#PBS -e $HOME/tuning-partial/irace-partial.stderr
+#PBS -N partial_pcol
 
 module load graph-tool/2.2.42-foss-2015a-Python-2.7.9
 module load R/3.1.1-intel-2014b
@@ -14,4 +15,4 @@ MPIRUN=mpirun
 
 cd $HOME/tuning-partial
 
-$MPIRUN -outfile-pattern $HOME/mpi.out -errfile-pattern $HOME/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning/arena --mpi 1 --parallel 4
+$MPIRUN -outfile-pattern $HOME/tuning-partial/mpi.out -errfile-pattern $HOME/tuning-partial/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning-partial/arena --mpi 1 --parallel 4

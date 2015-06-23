@@ -1,11 +1,12 @@
 #!/bin/bash -l
 
 #PBS -l walltime=24:00:00
-#PBS -l nodes=21
-#PBS -l mem=60gb
+#PBS -l nodes=5:ppn=1
+#PBS -l mem=10gb
 #PBS -m bae
-#PBS -o $HOME/irace-react_partial.stdout 
-#PBS -e $HOME/irace-react_partial.stderr 
+#PBS -o $HOME/tuning-react/irace-react_partial.stdout 
+#PBS -e $HOME/tuning-react/irace-react_partial.stderr 
+#PBS -N react_pcol
 
 module load graph-tool/2.2.42-foss-2015a-Python-2.7.9
 module load R/3.1.1-intel-2014b

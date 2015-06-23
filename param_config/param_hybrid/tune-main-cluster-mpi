@@ -1,8 +1,8 @@
 #!/bin/bash -l
 
-#PBS -l walltime=60:00:00
-#PBS -l nodes=8:ppn=1
-#PBS -l mem=20gb
+#PBS -l walltime=24:00:00
+#PBS -l nodes=5:ppn=1
+#PBS -l mem=10gb
 #PBS -m bae
 #PBS -o $HOME/tuning-hybrid/irace-hybrid.stdout 
 #PBS -e $HOME/tuning-hybrid/irace-hybrid.stderr 
@@ -15,4 +15,4 @@ MPIRUN=mpirun
 
 cd $HOME/tuning-hybrid
 
-$MPIRUN -outfile-pattern $HOME/tuning-hybrid/mpi.out -errfile-pattern $HOME/tuning-hybrid/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning-hybrid/arena --mpi 1 --parallel 7
+$MPIRUN -outfile-pattern $HOME/tuning-hybrid/mpi.out -errfile-pattern $HOME/tuning-hybrid/mpi.err -np 1 $IRACE_HOME/bin/irace --exec-dir=$HOME/tuning-hybrid/arena --mpi 1 --parallel 4
