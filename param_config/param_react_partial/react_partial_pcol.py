@@ -24,7 +24,7 @@ def benchmark_function(graphe, func, *func_args, **func_kwargs):
 
     sol = func(prob, *func_args, **func_kwargs)
 
-    return sol
+    return prob, sol
 
 
 if __name__ == "__main__":
@@ -73,11 +73,11 @@ if __name__ == "__main__":
               "tenure_inc": args.tenure_inc,
               "duration": args.duration}
 
-    sol = benchmark_function(g, react_partial_pack_col, **kwargs)
+    prob, sol = benchmark_function(g, react_partial_pack_col, **kwargs)
     print(sol.get_max_col())
 
     if args.print_sol:
-        solfname = "{0}_{1}.pcol".format(prob.name, best_sol.get_max_col())
+        solfname = "{0}_{1}.pcol".format(prob.name, sol.get_max_col())
         with open(solfname, 'a') as f:
-            print(best_sol, file=f)
+            print(sol, file=f)
             print("", file=f)
