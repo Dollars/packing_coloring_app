@@ -171,7 +171,6 @@ def crossover_cover(prob, sols):
 
     if np.any(child == 0):
         child = rlf_algorithm(prob, child)
-    print(child.get_area_score(prob))
 
     if count_conflicting_edge(prob, child) > 0:
         logging.error("Crossover cover -> Fail !")
