@@ -40,17 +40,6 @@ def generate_population2(prob, size, heuristic, init_args):
         logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
     return pop
 
-
-def generate_population3(prob, size, heuristic, init_args):
-    logging.info("Init population by RLF")
-    pop = []
-    for i in range(size):
-        indiv = heuristic(prob, **init_args)
-        pop.append(indiv)
-        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
-    return pop
-
-
 @trace
 def selection(pop, tournament_size=2):
     # Tournament Selection
@@ -284,7 +273,7 @@ def mutation(prob, sol, local_search, ls_args):
 
 
 @trace
-def update_population(prob, pop, eval_func, nbr_gen=None):
+def update_population(prob, pop, eval_func):
     logging.info("Update")
     area_val = []
     pcol_val = []
@@ -310,17 +299,13 @@ def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate,
                   crossover_area]
 
     init_pops = [generate_population,
-                 generate_population2,
-                 generate_population3]
+                 generate_population2]
 
     crossover = crossovers[crossover_methode]
     init_pop = init_pops[init_methode]
 
     pop = init_pop(prob, pop_size, init_heur, init_args)
-    # for i, indiv in enumerate(pop):
-    #     pop[i] = local_search(prob, sol=indiv, **ls_args)
-    #     print("individu #", i, "'s quality:", pop[i].get_max_col())
-    pop = update_population(prob, pop, eval_func, 0)
+    pop = update_population(prob, pop, eval_func)
 
     best_sol = pop[0]
     best_score = best_sol.get_max_col()
@@ -335,30 +320,23 @@ def hybrid_algorithm(prob, pop_size, nbr_gen, pool_size, replace_rate,
             logging.info("Parents: (" + str(parents[0].get_max_col()) +
                          ", " + str(parents[1].get_max_col()) + ")")
             child = crossover(prob, parents)
-            # child = crossover_area(prob, parents)
-            # child = crossover_cover(prob, parents)
+
+            if rd.rand() <= mut_prob:
+                logging.info("Before mutation" + str(child.get_max_col()))
+                child = mutation(prob, child, local_search, ls_args)
+                logging.info("After mutation" + str(child.get_max_col()))
+                child = local_search(prob, sol=child, **ls_args)
+                logging.info("Result" + str(child.get_max_col()))
+
             child = local_search(prob, sol=child, **ls_args)
             logging.info("Resulting child" + str(child.get_max_col()) +
                          " ->" + str(child.get_max_col()))
             new_gen.append(child)
 
         new_gen = update_population(prob, new_gen, eval_func)
-        if new_gen[0].get_max_col() < best_score:
-            best_sol = new_gen[0].copy()
-            best_score = best_sol.get_max_col()
-            print_trace(prob, best_sol)
-
-        for i, indiv in enumerate(new_gen):
-            if rd.rand() < mut_prob:
-                logging.info("Before mutation" + str(indiv.get_max_col()))
-                indiv = mutation(prob, indiv, local_search, ls_args)
-                logging.info("After mutation" + str(indiv.get_max_col()))
-                indiv = local_search(prob, sol=indiv, **ls_args)
-                logging.info("Result" + str(indiv.get_max_col()))
-                new_gen[i] = indiv
-
-        pop = new_gen + pop[:(pop_size - len(new_gen))]
-        pop = update_population(prob, pop, eval_func, gen+1)
+        pop = new_gen + pop
+        pop = update_population(prob, pop, eval_func)
+        pop = pop[:pop_size]
 
         if pop[0].get_max_col() < best_score:
             best_sol = pop[0].copy()

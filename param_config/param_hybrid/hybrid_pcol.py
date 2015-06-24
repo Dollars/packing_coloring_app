@@ -70,12 +70,12 @@ if __name__ == "__main__":
 
     eval_func = lambda prob, a: a.get_area_score(prob)
 
-    ls_methodes = [partial_pack_col]
-                   # react_partial_pack_col,
-                   # tabu_pack_col]
-    ls_args = [{"k_count": 3, "tt_a": 90, "tt_d": 0.1, "max_iter": 1000, "count_max": 5}]
-               # {"k_count": 3, "tt_a": 20, "tt_d": 0.6, "max_iter": 100, "iter_period": 130, "tenure_inc": 75},
-               # {"k_count": 3, "tt_a": 80, "tt_d": 1., "max_iter": 250, "count_max": 160}]
+    ls_methodes = [partial_pack_col,
+                   react_partial_pack_col,
+                   tabu_pack_col]
+    ls_args = [{"k_count": 3, "tt_a": 90, "tt_d": 0.1, "max_iter": 1000, "count_max": 5},
+               {"k_count": 3, "tt_a": 20, "tt_d": 0.6, "max_iter": 100, "iter_period": 130, "tenure_inc": 75},
+               {"k_count": 3, "tt_a": 80, "tt_d": 1., "max_iter": 250, "count_max": 160}]
 
     init_methodes = [rlf_algorithm]
     init_args = [{}]

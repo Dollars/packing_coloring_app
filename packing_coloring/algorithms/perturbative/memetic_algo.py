@@ -38,16 +38,6 @@ def generate_population2(prob, size, heuristic, init_args):
     return pop
 
 
-def generate_population3(prob, size, heuristic, init_args):
-    logging.info("Init population by RLF")
-    pop = []
-    for i in range(size):
-        indiv = heuristic(prob, **init_args)
-        pop.append(indiv)
-        logging.info("init candidate " + str(i) + ": " + str(pop[i].get_max_col()))
-    return pop
-
-
 def selection(pop, pool_size=2):
     # Tournament Selection
     indices = np.arange(len(pop), dtype=int)
@@ -112,13 +102,10 @@ def memetic_algorithm(prob, pop_size, nbr_gen, pool_size,
     end_time = time.time()+(duration*60)
 
     init_pops = [generate_population,
-                 generate_population2,
-                 generate_population3]
+                 generate_population2]
     init_pop = init_pops[init_methode]
+
     pop = init_pop(prob, pop_size, init_heur, init_args)
-    # for i, indiv in enumerate(pop):
-    #     pop[i] = local_search(prob, sol=indiv, **ls_args)
-    #     print("individu #", i, "'s quality:", indiv.get_max_col())
     pop = update_population(prob, pop, eval_func)
 
     p_nbr = max(min(int(np.ceil(pop_size*breeding_rate)), pop_size-1), 2)
