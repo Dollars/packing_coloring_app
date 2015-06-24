@@ -121,7 +121,7 @@ def tabu_pack_col(prob, k_count=3, sol=None, tt_a=10, tt_d=0.5,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
-        logging.warning("{0}, {1}".format(k_col, k_lim))
+        logging.warning("{0}: {1}, {2}".format(count, k_col, k_lim))
         sol = tabu_kpack_col(prob, k_col, sol,
                              tt_a, tt_d, max_iter, count_max)
         new_score = count_conflicting_edge(prob, sol)
@@ -246,7 +246,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
-        logging.warning("{0}, {1}".format(k_col, k_lim))
+        logging.warning("{0}: {1}, {2}".format(count, k_col, k_lim))
         sol = partial_kpack_col(prob, k_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
                                 max_iter=max_iter, count_max=count_max)
 
@@ -254,7 +254,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
         if max_col <= k_col:
             if max_col < best_sol.get_max_col():
                 count = 0
-                k_lim = k_col
+                k_lim = max_col
                 best_sol = sol.copy()
                 print_trace(prob, best_sol)
             k_col = max_col - 1
@@ -262,6 +262,7 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
             k_col = max_col + 1
         if k_col >= k_lim:
             count += 1
+
         if time.time() >= end_time:
             break
 
@@ -347,7 +348,7 @@ def react_partial_pack_col(prob, k_count=3, sol=None, start_col=None, tt_a=10,
     k_col = k_lim - 1
     count = 0
     while count < k_count:
-        logging.warning("{0}, {1}".format(k_col, k_lim))
+        logging.warning("{0}: {1}, {2}".format(count, k_col, k_lim))
         sol = react_partial_kpack_col(
             prob, k_col, sol=sol, tt_a=tt_a, tt_d=tt_d,
             max_iter=max_iter, iter_period=iter_period, tenure_inc=tenure_inc)
