@@ -251,8 +251,6 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
                                 max_iter=max_iter, count_max=count_max)
 
         max_col = sol.get_max_col()
-        if max_col >= k_lim:
-            count += 1
         if max_col <= k_col:
             if max_col < best_sol.get_max_col():
                 count = 0
@@ -260,7 +258,10 @@ def partial_pack_col(prob, k_count=3, sol=None, start_col=None, count_max=10,
                 best_sol = sol.copy()
                 print_trace(prob, best_sol)
             k_col = max_col - 1
-
+        else:
+            k_col = max_col + 1
+        if k_col >= k_lim:
+            count += 1
         if time.time() >= end_time:
             break
 
